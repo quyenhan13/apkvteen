@@ -82,7 +82,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onLogout, onWatch }
     }
   };
 
-  const isUpToDate = latestVersion && !hasNewerVersion(latestVersion, currentVersion);
+  const isUpToDate = latestVersion && !latestVersion.startsWith('Loi:') && !hasNewerVersion(latestVersion, currentVersion);
 
   return (
     <div className="flex flex-col gap-6 pb-10">
