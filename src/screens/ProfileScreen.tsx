@@ -202,44 +202,57 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onLogout, onWatch }
             {checking ? 'Đang kiểm tra...' : 'Kiểm tra bản mới'}
           </button>
 
-          {!isUpToDate && latestVersion && latestVersion !== 'Loi' && (
-            <div className="pt-4 border-t border-white/5">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-yellow-500/80 mb-1">Bản cập nhật mới</p>
-                  <p className="text-sm font-black text-white font-mono">{latestVersion}</p>
-                </div>
-                <div className="bg-yellow-500/10 text-yellow-400 px-2 py-1 rounded-lg text-[8px] font-black uppercase border border-yellow-500/20">
-                  RECOMENDED
-                </div>
-              </div>
-              <button
-                onClick={handleUpdate}
-                disabled={updating}
-                className="w-full bg-primary py-3 rounded-xl text-[10px] font-black text-black uppercase tracking-[0.2em] shadow-[0_8px_20px_rgba(6,182,212,0.3)] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-              >
-                {updating ? (
-                  <>
-                    <div className="w-3 h-3 border-2 border-black/20 border-t-black rounded-full animate-spin" />
-                    ĐANG CẬP NHẬT...
-                  </>
-                ) : (
-                  <>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-4 h-4"><path d="M7 16l5 5m0 0l5-5m-5 5V3" /></svg>
-                    CẬP NHẬT NGAY
-                  </>
-                )}
-              </button>
-            </div>
+          {checking && (
+             <div className="flex items-center gap-2 text-primary/50 animate-pulse">
+               <span className="text-[9px] font-black uppercase tracking-widest">Đang kết nối tới máy chủ...</span>
+             </div>
           )}
 
-          {isUpToDate && (
-            <div className="flex items-center gap-2 text-green-400/50">
+          {!checking && isUpToDate && (
+            <div className="flex items-center gap-2 text-green-400/60">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3 h-3"><path d="M5 13l4 4L19 7" /></svg>
               <span className="text-[9px] font-black uppercase tracking-widest">Bạn đang sử dụng phiên bản mới nhất</span>
             </div>
           )}
+
+          {!checking && latestVersion === 'Loi' && (
+            <div className="flex items-center gap-2 text-red-400/60">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3 h-3"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <span className="text-[9px] font-black uppercase tracking-widest">Lỗi kết nối máy chủ</span>
+            </div>
+          )}
         </div>
+
+        {!checking && !isUpToDate && latestVersion && latestVersion !== 'Loi' && (
+          <div className="mt-3 rounded-2xl border border-yellow-500/20 bg-yellow-500/5 px-5 py-5">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-widest text-yellow-500/80 mb-1">Bản cập nhật mới</p>
+                <p className="text-sm font-black text-white font-mono">{latestVersion}</p>
+              </div>
+              <div className="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-lg text-[8px] font-black uppercase border border-yellow-500/20">
+                MỚI
+              </div>
+            </div>
+            <button
+              onClick={handleUpdate}
+              disabled={updating}
+              className="w-full bg-primary py-3.5 rounded-xl text-[10px] font-black text-black uppercase tracking-[0.2em] shadow-[0_8px_20px_rgba(6,182,212,0.3)] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            >
+              {updating ? (
+                <>
+                  <div className="w-3 h-3 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                  ĐANG CẬP NHẬT...
+                </>
+              ) : (
+                <>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-4 h-4"><path d="M7 16l5 5m0 0l5-5m-5 5V3" /></svg>
+                  NÂNG CẤP NGAY
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
