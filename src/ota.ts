@@ -1,0 +1,93 @@
+import { Capacitor, CapacitorHttp } from '@capacitor/core';
+import { CapacitorUpdater } from '@capgo/capacitor-updater';
+import { CONFIG } from './config';
+
+export interface UpdateInfo {
+  status?: string;
+  version?: string;
+  url?: string;
+  notes?: string;
+}
+
+const UPDATE_TIMEOUT_MS = 8000;
+
+const parseMaybeJson = (value: unknown): UpdateInfo | null => {
+  if (!value) return null;
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value) as UpdateInfo;
+    } catch {
+      return null;
+    }
+  }
+  if (typeof value === 'object') return value as UpdateInfo;
+  return null;
+};
+
+const withTimeout = async <T,>(task: Promise<T>, timeoutMs = UPDATE_TIMEOUT_MS): Promise<T> => {
+  let timer: number | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = window.setTimeout(() => reject(new Error('Update request timeout')), timeoutMs);
+  });
+
+  try {
+    return await Promise.race([task, timeout]);
+  } finally {
+    if (timer) window.clearTimeout(timer);
+  }
+};
+
+const normalizeVersion = (version: string) => version.trim().replace(/^v/i, '');
+
+const toVersionParts = (version: string) => {
+  const parts = normalizeVersion(version).split('.').map((part) => Number(part));
+  return parts.every((part) => Number.isFinite(part)) ? parts : null;
+};
+
+export const getCurrentOtaVersion = () => localStorage.getItem('vteen_ota_version') || CONFIG.VERSION;
+
+export const hasNewerVersion = (remoteVersion?: string, currentVersion = getCurrentOtaVersion()) => {
+  if (!remoteVersion) return false;
+
+  const remote = normalizeVersion(remoteVersion);
+  const current = normalizeVersion(currentVersion);
+  if (remote === current) return false;
+
+  const remoteParts = toVersionParts(remote);
+  const currentParts = toVersionParts(current);
+  if (!remoteParts || !currentParts) return remote !== current;
+
+  const max = Math.max(remoteParts.length, currentParts.length);
+  for (let index = 0; index < max; index += 1) {
+    const remotePart = remoteParts[index] || 0;
+    const currentPart = currentParts[index] || 0;
+    if (remotePart > currentPart) return true;
+    if (remotePart < currentPart) return false;
+  }
+  return false;
+};
+
+export const fetchUpdateInfo = async (manual = false, timeoutMs = UPDATE_TIMEOUT_MS) => {
+  const url = `${CONFIG.API_BASE_URL}/update.php?nocache=${manual ? '1' : '0'}&t=${Date.now()}`;
+
+  if (Capacitor.isNativePlatform()) {
+    const response = await withTimeout(CapacitorHttp.get({ url }), timeoutMs);
+    return parseMaybeJson(response.data);
+  }
+
+  const response = await withTimeout(fetch(url, { cache: 'no-store' }), timeoutMs);
+  if (!response.ok) throw new Error(`Update HTTP ${response.status}`);
+  return parseMaybeJson(await response.text());
+};
+
+export const installUpdate = async (info: UpdateInfo) => {
+  if (!Capacitor.isNativePlatform()) throw new Error('OTA only works on native platforms');
+  if (info.status !== 'success' || !info.version || !info.url) throw new Error('Invalid update payload');
+
+  const bundle = await CapacitorUpdater.download({ url: info.url, version: info.version });
+  await CapacitorUpdater.set({ id: bundle.id });
+  localStorage.setItem('vteen_ota_version', info.version);
+  return bundle;
+};
+
+export const reloadForUpdate = () => CapacitorUpdater.reload();

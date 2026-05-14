@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #05070a;
+  --color-background-soft: #080a0f;
+  --color-card: rgba(15, 15, 20, 0.6);
+  --color-border-glass: rgba(0, 242, 255, 0.15);
+  --color-primary: #06b6d4;
+  --color-secondary: #7c3aed;
+  --color-vip: #FACC15;
+  --color-success: #22C55E;
+  --color-text-dim: #94a3b8;
+}
+
+:root {
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--color-background);
+  color: white;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overscroll-behavior: none;
+  color-scheme: dark;
+}
+
+/* Force all media containers to be black to avoid white flashes */
+iframe, video, .aspect-video {
+  background-color: #000 !important;
+}
+
+iframe {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  background-color: var(--color-background);
+  overscroll-behavior: none;
+  text-rendering: geometricPrecision;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  -webkit-touch-callout: none;
+}
+
+input {
+  min-width: 0;
+}
+
+*:focus-visible {
+  outline: 2px solid rgba(6, 182, 212, 0.8);
+  outline-offset: 3px;
+}
+
+.glass {
+  background: var(--color-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border-glass);
+  box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.3);
+}
+
+.tap-target {
+  touch-action: manipulation;
+}
+
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+  animation: skeleton-shimmer 1.35s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes animate-marquee {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+.animate-marquee {
+  animation: animate-marquee 10s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

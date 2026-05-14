@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">VTeen</string>
+    <string name="title_activity_main">VTeen</string>
+    <string name="package_name">vn.shop.vteen.app</string>
+    <string name="custom_url_scheme">vn.shop.vteen.app</string>
+</resources>
