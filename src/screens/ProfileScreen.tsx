@@ -70,25 +70,22 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onLogout, onWatch }
       if (data && data.status === 'success' && data.url) {
         if (Capacitor.isNativePlatform()) {
           try {
-            // Hiển thị thông báo đang tải cho người dùng
             setLatestVersion('Đang tải bản cập nhật...');
-            
             await installUpdate(data);
             
             setLatestVersion('Đang cài đặt...');
-            setCurrentVersion(data.version || CONFIG.VERSION);
-            
             alert('Cập nhật thành công! App sẽ khởi động lại ngay bây giờ.');
             setTimeout(() => {
               reloadForUpdate();
             }, 1000);
-            return;
           } catch (otaErr) {
             console.error('OTA failed:', otaErr);
-            // Nếu lỗi nặng mới phải mở trình duyệt
+            alert('Lỗi cập nhật tự động. Đang chuyển sang tải thủ công...');
             await Browser.open({ url: data.url });
           }
         } else {
+          // Nếu ở trên Web, hiện thông báo rõ ràng thay vì cứ tải zip
+          alert('Bạn đang dùng bản Web. Tính năng tự động cập nhật chỉ có trên App. Vui lòng tải file cập nhật và cài đặt thủ công.');
           await Browser.open({ url: data.url });
         }
       }
