@@ -23,7 +23,10 @@ const config: CapacitorConfig = {
       '*.youtube-nocookie.com',
       'youtu.be',
       '*.googlevideo.com',
-      '*.ytimg.com'
+      '*.ytimg.com',
+      'github.com',
+      '*.github.com',
+      '*.githubusercontent.com'
     ]
   },
   ios: {
@@ -39,6 +42,10 @@ const config: CapacitorConfig = {
   plugins: {
     CapacitorHttp: {
       enabled: true
+    },
+    CapacitorUpdater: {
+      autoUpdate: false,
+      stats: false
     }
   }
 };
