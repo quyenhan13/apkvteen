@@ -147,6 +147,15 @@ function App() {
     }
 
     const t = setTimeout(() => setShowSplash(false), 450);
+
+    // Đồng bộ phiên bản: Nếu CONFIG.VERSION trong code mới hơn hoặc khác bản lưu, xóa bản lưu cũ
+    const baseVersion = CONFIG.VERSION;
+    const savedOta = localStorage.getItem('vteen_ota_version');
+    if (savedOta && savedOta !== baseVersion) {
+      // Nếu bản trong code là bản chính thức mới (build mới), ưu tiên nó
+      localStorage.removeItem('vteen_ota_version');
+    }
+
     return () => {
       cancelled = true;
       clearTimeout(t);

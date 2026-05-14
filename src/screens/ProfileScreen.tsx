@@ -189,16 +189,18 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onLogout, onWatch }
               <p className="text-[9px] font-black uppercase tracking-widest text-white/20 mb-1">Phiên bản hiện tại</p>
               <p className="text-sm font-black text-white font-mono">{currentVersion}</p>
             </div>
-            <button 
-              onClick={() => checkUpdates(true)}
-              disabled={checking}
-              className="p-2 rounded-xl bg-white/5 text-white/40 hover:text-primary transition-colors disabled:opacity-50"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className={`w-4 h-4 ${checking ? 'animate-spin' : ''}`}>
-                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </button>
           </div>
+
+          <button 
+            onClick={() => checkUpdates(true)}
+            disabled={checking}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-white/60 active:scale-[0.98] transition-all disabled:opacity-50"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className={`w-4 h-4 ${checking ? 'animate-spin' : ''}`}>
+              <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            {checking ? 'Đang kiểm tra...' : 'Kiểm tra bản mới'}
+          </button>
 
           {!isUpToDate && latestVersion && latestVersion !== 'Loi' && (
             <div className="pt-4 border-t border-white/5">
