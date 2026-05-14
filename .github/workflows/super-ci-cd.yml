@@ -41,11 +41,11 @@ jobs:
       - name: Build Web
         run: npm run build
 
-      - name: Create OTA Bundle
+      - name: Create APK OTA Bundle
         run: |
           mkdir -p dist
           cd dist
-          zip -r ../update.zip .
+          zip -r ../update-apk.zip .
           cd ..
 
       - name: Read App Version
@@ -64,12 +64,13 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.app_version.outputs.version }}-${{ github.run_number }}
-          name: VTeen ${{ steps.app_version.outputs.version }} build ${{ github.run_number }}
+          tag_name: v${{ steps.app_version.outputs.version }}
+          name: VTeen ${{ steps.app_version.outputs.version }}
           files: |
-            update.zip
+            update-apk.zip
             android/app/build/outputs/apk/debug/app-debug.apk
           generate_release_notes: true
+          make_latest: true
           draft: false
           prerelease: false
         env:
