@@ -6,5 +6,5 @@ export const CONFIG = {
   SITE_BASE_URL: 'https://vteen.shop',
   GITHUB_REPO: 'quyenhan13/apkvteen', // Repository để check OTA
   APP_NAME: 'VTeen',
-  VERSION: '2.0.0' // Phải khớp với version trong App Store để so sánh
+  VERSION: '0.0.8' // Phải khớp với version trong App Store để so sánh
 };
