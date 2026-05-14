@@ -84,13 +84,37 @@ export const fetchUpdateInfo = async (manual = false, timeoutMs = UPDATE_TIMEOUT
 };
 
 export const installUpdate = async (info: UpdateInfo) => {
-  if (!Capacitor.isNativePlatform()) throw new Error('OTA only works on native platforms');
-  if (info.status !== 'success' || !info.version || !info.url) throw new Error('Invalid update payload');
+  if (!Capacitor.isNativePlatform()) {
+    console.warn('OTA attempt on non-native platform');
+    throw new Error('OTA only works on native platforms');
+  }
+  
+  if (info.status !== 'success' || !info.version || !info.url) {
+    throw new Error('Invalid update payload');
+  }
 
-  const bundle = await CapacitorUpdater.download({ url: info.url, version: info.version });
-  await CapacitorUpdater.set({ id: bundle.id });
-  localStorage.setItem('vteen_ota_version', info.version);
-  return bundle;
+  console.log(`Starting OTA update to version ${info.version} from ${info.url}`);
+  
+  try {
+    // Tải bản cập nhật về bộ nhớ đệm
+    const bundle = await CapacitorUpdater.download({ 
+      url: info.url, 
+      version: info.version,
+    });
+    
+    console.log('Download complete, setting bundle:', bundle.id);
+    
+    // Áp dụng bản cập nhật
+    await CapacitorUpdater.set({ id: bundle.id });
+    
+    // Lưu phiên bản vào máy
+    localStorage.setItem('vteen_ota_version', info.version);
+    
+    return bundle;
+  } catch (err) {
+    console.error('CapacitorUpdater error:', err);
+    throw err;
+  }
 };
 
 export const reloadForUpdate = () => CapacitorUpdater.reload();
