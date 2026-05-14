@@ -33,17 +33,54 @@ interface MoviesResponse {
   message?: string;
 }
 
+interface MoviesCache {
+  movies: Movie[];
+  totalPages: number;
+  page: number;
+  categories: string[];
+  savedAt: number;
+}
+
 interface HomeProps {
   onWatch: (slug: string) => void;
   isWatching?: boolean;
 }
 
 const fallbackPoster = 'https://placehold.co/300x450/0b0f17/64748b?text=VTeen';
+const DEFAULT_CATEGORIES = ['Tất cả', 'Phim bộ', 'Phim lẻ'];
+const MOVIES_CACHE_PREFIX = 'vteen_movies_cache_v2';
+const MOVIES_CACHE_MAX_AGE = 1000 * 60 * 5;
+
+const getMoviesCacheKey = (pageNum: number) => `${MOVIES_CACHE_PREFIX}:${pageNum}`;
+
+const readMoviesCache = (pageNum: number): MoviesCache | null => {
+  try {
+    const raw = sessionStorage.getItem(getMoviesCacheKey(pageNum)) || localStorage.getItem(getMoviesCacheKey(pageNum));
+    if (!raw) return null;
+
+    const cache = JSON.parse(raw) as MoviesCache;
+    if (!Array.isArray(cache.movies) || Date.now() - cache.savedAt > MOVIES_CACHE_MAX_AGE) return null;
+    return cache;
+  } catch {
+    return null;
+  }
+};
+
+const writeMoviesCache = (cache: MoviesCache) => {
+  const payload = JSON.stringify(cache);
+  try {
+    sessionStorage.setItem(getMoviesCacheKey(cache.page), payload);
+    localStorage.setItem(getMoviesCacheKey(cache.page), payload);
+  } catch {
+    // Cache only speeds up startup; network loading remains the source of truth.
+  }
+};
 
 const HomeScreen: React.FC<HomeProps> = ({ onWatch, isWatching }) => {
-  const [movies, setMovies] = useState<Movie[]>([]);
+  const [initialCache] = useState(() => readMoviesCache(1));
+  const [movies, setMovies] = useState<Movie[]>(() => initialCache?.movies || []);
   const [history, setHistory] = useState<HistoryItem[]>(() => getHistory());
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(() => !initialCache);
   const [error, setError] = useState<string | null>(null);
 
   // Cập nhật lịch sử xem khi người dùng quay lại từ trình phát
@@ -54,15 +91,24 @@ const HomeScreen: React.FC<HomeProps> = ({ onWatch, isWatching }) => {
   }, [isWatching]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('Tất cả');
-  const [categories, setCategories] = useState<string[]>(['Tất cả', 'Phim bộ', 'Phim lẻ']);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [categories, setCategories] = useState<string[]>(() => initialCache?.categories || DEFAULT_CATEGORIES);
+  const [page, setPage] = useState(() => initialCache?.page || 1);
+  const [totalPages, setTotalPages] = useState(() => initialCache?.totalPages || 1);
   const [featuredIndex, setFeaturedIndex] = useState(0);
 
   const deferredSearch = useDeferredValue(searchTerm);
 
   const fetchMovies = useCallback(async (pageNum: number) => {
-    setLoading(true);
+    const cache = readMoviesCache(pageNum);
+    if (cache) {
+      setMovies(cache.movies);
+      setTotalPages(cache.totalPages);
+      setPage(cache.page);
+      setCategories(cache.categories);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
     setError(null);
     const abortController = new AbortController();
     const timeoutId = setTimeout(() => abortController.abort(), 10000); // 10s timeout
@@ -91,9 +137,19 @@ const HomeScreen: React.FC<HomeProps> = ({ onWatch, isWatching }) => {
 
       if (result && result.status === 'success' && Array.isArray(result.data)) {
         setMovies(result.data);
-        setTotalPages(Math.max(1, Number(result.total_pages) || 1));
-        setPage(Math.max(1, Number(result.page) || pageNum));
-        if (result.categories) setCategories(['Tất cả', ...result.categories]);
+        const nextTotalPages = Math.max(1, Number(result.total_pages) || 1);
+        const nextPage = Math.max(1, Number(result.page) || pageNum);
+        const nextCategories = result.categories ? ['Tất cả', ...result.categories] : DEFAULT_CATEGORIES;
+        setTotalPages(nextTotalPages);
+        setPage(nextPage);
+        setCategories(nextCategories);
+        writeMoviesCache({
+          movies: result.data,
+          totalPages: nextTotalPages,
+          page: nextPage,
+          categories: nextCategories,
+          savedAt: Date.now(),
+        });
       } else {
         setError(result?.message || 'Không tải được danh sách phim');
       }

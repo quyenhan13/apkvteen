@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ScreenOrientation as OrientationPlugin } from '@capacitor/screen-orientation';
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import { getHistory, removeFromHistory, saveToHistory } from '../storage/watchHistory';
@@ -30,6 +30,29 @@ interface WebPlayerState {
   videoSrc: string | null;
 }
 
+interface WatchProgress {
+  time: number;
+  duration: number;
+  updatedAt: number;
+}
+
+interface HlsConstructor {
+  isSupported: () => boolean;
+  new (): HlsInstance;
+}
+
+interface HlsInstance {
+  loadSource: (url: string) => void;
+  attachMedia: (video: HTMLVideoElement) => void;
+  destroy: () => void;
+}
+
+declare global {
+  interface Window {
+    Hls?: HlsConstructor;
+  }
+}
+
 interface WatchScreenProps {
   slug: string;
   onBack: () => void;
@@ -57,6 +80,58 @@ const getYouTubeId = (value: string) => {
 
 const buildYouTubeEmbedUrl = (id: string) =>
   `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1&origin=${encodeURIComponent(CONFIG.SITE_BASE_URL)}&widget_referrer=${encodeURIComponent(CONFIG.SITE_BASE_URL)}`;
+
+const WATCH_PROGRESS_PREFIX = 'vteen_watch_progress_v1';
+const HLS_JS_URL = 'https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js';
+
+const getWatchProgressKey = (slug: string, episode: string) => `${WATCH_PROGRESS_PREFIX}:${slug}:${episode}`;
+
+const readWatchProgress = (slug: string, episode: string): WatchProgress | null => {
+  try {
+    const raw = localStorage.getItem(getWatchProgressKey(slug, episode));
+    if (!raw) return null;
+    const progress = JSON.parse(raw) as WatchProgress;
+    if (!Number.isFinite(progress.time) || progress.time < 10) return null;
+    return progress;
+  } catch {
+    return null;
+  }
+};
+
+const saveWatchProgress = (slug: string, episode: string, time: number, duration: number) => {
+  if (!Number.isFinite(time) || time < 5) return;
+  try {
+    localStorage.setItem(getWatchProgressKey(slug, episode), JSON.stringify({
+      time,
+      duration: Number.isFinite(duration) ? duration : 0,
+      updatedAt: Date.now()
+    }));
+  } catch {
+    // Progress is best-effort; playback should continue if storage is unavailable.
+  }
+};
+
+const loadHlsLibrary = () =>
+  new Promise<HlsConstructor>((resolve, reject) => {
+    if (window.Hls) {
+      resolve(window.Hls);
+      return;
+    }
+
+    const existing = document.querySelector<HTMLScriptElement>(`script[src="${HLS_JS_URL}"]`);
+    if (existing) {
+      existing.addEventListener('load', () => window.Hls ? resolve(window.Hls) : reject(new Error('HLS library missing')));
+      existing.addEventListener('error', () => reject(new Error('HLS library failed')));
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = HLS_JS_URL;
+    script.async = true;
+    script.onload = () => window.Hls ? resolve(window.Hls) : reject(new Error('HLS library missing'));
+    script.onerror = () => reject(new Error('HLS library failed'));
+    document.head.appendChild(script);
+  });
 
 
 
@@ -165,6 +240,12 @@ const prepareEmbedHtml = (html: string) => {
   return `<!DOCTYPE html><html><head>${baseTag}${extraStyle}</head><body style="background:#000">${html}</body></html>`;
 };
 
+void fetchVteenText;
+void prepareEmbedHtml;
+
+void fetchVteenText;
+void prepareEmbedHtml;
+
 
 // Đã chuyển sang watch_api.php
 
@@ -183,6 +264,9 @@ const WatchScreen: React.FC<WatchScreenProps> = ({ slug, onBack, onUnauthorized 
   const [webPlayer, setWebPlayer] = useState<WebPlayerState>({ html: null, src: null, videoSrc: null });
   const [playerLoading, setPlayerLoading] = useState(false);
   const [playerError, setPlayerError] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const embedFrameRef = useRef<HTMLIFrameElement>(null);
+  const lastSavedTimeRef = useRef(0);
 
   useEffect(() => {
     // Cho phép xoay màn hình khi xem phim
@@ -225,6 +309,13 @@ const WatchScreen: React.FC<WatchScreenProps> = ({ slug, onBack, onUnauthorized 
       setFav(added);
     }
   };
+
+  const saveCurrentVideoProgress = useCallback(() => {
+    if (!currentEp) return;
+    const video = videoRef.current;
+    if (!video) return;
+    saveWatchProgress(slug, currentEp.episode, video.currentTime, video.duration);
+  }, [currentEp, slug]);
 
   const fetchDetails = useCallback(async () => {
     try {
@@ -353,8 +444,10 @@ const WatchScreen: React.FC<WatchScreenProps> = ({ slug, onBack, onUnauthorized 
       } else {
         // Fallback: Dùng iframe embed qua srcDoc
         const embedPath = toVteenPath(servers[selectedKey]);
-        const embedHtml = await fetchVteenText(embedPath);
-        setWebPlayer({ html: prepareEmbedHtml(embedHtml), src: null, videoSrc: null });
+        const embedSrc = import.meta.env.DEV
+          ? `/__vteen${embedPath}`
+          : `${CONFIG.SITE_BASE_URL}${embedPath}`;
+        setWebPlayer({ html: null, src: embedSrc, videoSrc: null });
       }
 
       const selectedServerNum = Number(selectedKey);
@@ -386,6 +479,85 @@ const WatchScreen: React.FC<WatchScreenProps> = ({ slug, onBack, onUnauthorized 
       window.clearTimeout(timer);
     };
   }, [loadWebPlayer]);
+
+  useEffect(() => {
+    const flushProgress = () => {
+      saveCurrentVideoProgress();
+    };
+
+    window.addEventListener('pagehide', flushProgress);
+    document.addEventListener('visibilitychange', flushProgress);
+
+    return () => {
+      flushProgress();
+      window.removeEventListener('pagehide', flushProgress);
+      document.removeEventListener('visibilitychange', flushProgress);
+    };
+  }, [saveCurrentVideoProgress]);
+
+  useEffect(() => {
+    const handlePlayerMessage = (event: MessageEvent) => {
+      if (!currentEp) return;
+      const data = event.data || {};
+      if (!data || typeof data !== 'object') return;
+
+      if (data.type === 'vteen:player-ready') {
+        const progress = readWatchProgress(slug, currentEp.episode);
+        if (!progress || progress.time < 10) return;
+        embedFrameRef.current?.contentWindow?.postMessage({
+          type: 'vteen:restore-progress',
+          currentTime: progress.time
+        }, '*');
+        return;
+      }
+
+      if (data.type !== 'vteen:player-progress') return;
+      const time = Number(data.currentTime || 0);
+      const duration = Number(data.duration || 0);
+      if (Math.abs(time - lastSavedTimeRef.current) < 5 && data.event !== 'pause' && data.event !== 'ended') return;
+      lastSavedTimeRef.current = time;
+      saveWatchProgress(slug, currentEp.episode, time, duration);
+    };
+
+    window.addEventListener('message', handlePlayerMessage);
+    return () => window.removeEventListener('message', handlePlayerMessage);
+  }, [currentEp, slug]);
+
+  useEffect(() => {
+    if (!webPlayer.videoSrc || !webPlayer.videoSrc.includes('.m3u8')) return;
+
+    let cancelled = false;
+    let hlsInstance: HlsInstance | null = null;
+
+    const attachHls = async () => {
+      const video = videoRef.current;
+      if (!video) return;
+
+      if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = webPlayer.videoSrc || '';
+        return;
+      }
+
+      try {
+        const Hls = await loadHlsLibrary();
+        if (cancelled || !Hls.isSupported()) return;
+
+        hlsInstance = new Hls();
+        hlsInstance.loadSource(webPlayer.videoSrc || '');
+        hlsInstance.attachMedia(video);
+      } catch (err) {
+        console.error('HLS setup error:', err);
+        if (!cancelled) setPlayerError('Loi trinh phat HLS');
+      }
+    };
+
+    void attachHls();
+
+    return () => {
+      cancelled = true;
+      hlsInstance?.destroy();
+    };
+  }, [webPlayer.videoSrc]);
 
 
   if (loading) {
@@ -457,15 +629,33 @@ const WatchScreen: React.FC<WatchScreenProps> = ({ slug, onBack, onUnauthorized 
         ) : webPlayer.videoSrc ? (
           <div className="w-full h-full bg-black relative z-0">
             <video 
-              src={webPlayer.videoSrc} 
+              ref={videoRef}
+              src={webPlayer.videoSrc.includes('.m3u8') ? undefined : webPlayer.videoSrc} 
               className="w-full h-full" 
               controls 
               autoPlay 
               playsInline
+              onLoadedMetadata={(event) => {
+                if (!currentEp) return;
+                const progress = readWatchProgress(slug, currentEp.episode);
+                const video = event.currentTarget;
+                if (!progress || !Number.isFinite(video.duration)) return;
+                if (progress.duration && video.duration - progress.time < 20) return;
+                video.currentTime = Math.min(progress.time, Math.max(0, video.duration - 10));
+              }}
+              onTimeUpdate={(event) => {
+                if (!currentEp) return;
+                const video = event.currentTarget;
+                if (Math.abs(video.currentTime - lastSavedTimeRef.current) < 5) return;
+                lastSavedTimeRef.current = video.currentTime;
+                saveWatchProgress(slug, currentEp.episode, video.currentTime, video.duration);
+              }}
+              onPause={saveCurrentVideoProgress}
             />
           </div>
         ) : webPlayer.src ? (
           <iframe 
+            ref={embedFrameRef}
             key={`${currentEp?.episode}-${activeServer}-${webPlayer.src}`}
             src={webPlayer.src}
             className="absolute inset-0 w-full h-full border-0 z-0"
@@ -477,6 +667,7 @@ const WatchScreen: React.FC<WatchScreenProps> = ({ slug, onBack, onUnauthorized 
           />
         ) : webPlayer.html ? (
           <iframe 
+            ref={embedFrameRef}
             key={`${currentEp?.episode}-${activeServer}-html`}
             srcDoc={webPlayer.html}
             className="absolute inset-0 w-full h-full border-0 z-0"

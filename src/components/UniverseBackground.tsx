@@ -6,9 +6,12 @@ const UniverseBackground: React.FC = () => {
   useEffect(() => {
     const stream = containerRef.current;
     if (!stream) return;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) return;
 
     const colors = ['#00f2ff', '#39ffba', '#ffffff', '#7000ff', '#ff00d4'];
     let emitterTimer: ReturnType<typeof window.setInterval> | null = null;
+    let startTimer: ReturnType<typeof window.setTimeout> | null = null;
 
     const getSpawnMetrics = () => ({
       spawnY: window.innerHeight + 20,
@@ -49,15 +52,15 @@ const UniverseBackground: React.FC = () => {
       if (emitterTimer !== null) return;
       emitterTimer = window.setInterval(() => {
         if (!document.hidden) spawnParticle();
-      }, window.innerWidth < 768 ? 180 : 110);
+      }, window.innerWidth < 768 ? 360 : 180);
     };
 
     stream.innerHTML = '';
-    for (let i = 0; i < 14; i++) {
+    for (let i = 0; i < 6; i++) {
       window.setTimeout(spawnParticle, i * 90);
     }
 
-    startEmitter();
+    startTimer = window.setTimeout(startEmitter, 650);
 
     const handleVisibility = () => {
       if (document.hidden) stopEmitter();
@@ -68,6 +71,7 @@ const UniverseBackground: React.FC = () => {
 
     return () => {
       stopEmitter();
+      if (startTimer) window.clearTimeout(startTimer);
       document.removeEventListener('visibilitychange', handleVisibility);
       stream.innerHTML = '';
     };
