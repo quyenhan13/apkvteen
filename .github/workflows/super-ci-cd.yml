@@ -45,7 +45,7 @@ jobs:
         run: |
           mkdir -p dist
           cd dist
-          zip -r ../update-apk.zip .
+          zip -r ../update.zip .
           cd ..
 
       - name: Read App Version
@@ -69,7 +69,7 @@ jobs:
           tag_name: v${{ steps.app_version.outputs.version }}-${{ github.run_number }}
           name: VTeen ${{ steps.app_version.outputs.version }} build ${{ github.run_number }}
           files: |
-            update-apk.zip
+            update.zip
             android/app/build/outputs/apk/debug/app-debug.apk
           generate_release_notes: true
           make_latest: true
