@@ -61,7 +61,7 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew clean assembleDebug --stacktrace
+          ./gradlew clean assembleDebug --no-daemon --no-parallel --stacktrace
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
