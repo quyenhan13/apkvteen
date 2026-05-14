@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { Browser } from '@capacitor/browser';
 import { getFavorites } from '../storage/favorites';
 import { getHistory } from '../storage/watchHistory';
 import { CONFIG } from '../config';
@@ -66,17 +68,27 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onLogout, onWatch }
     try {
       const data = await fetchUpdateInfo(true);
       if (data && data.status === 'success' && data.url) {
-        await installUpdate(data);
-        setCurrentVersion(data.version || CONFIG.VERSION);
-        
-        alert('Cap nhat thanh cong! App se khoi dong lai.');
-        setTimeout(() => {
-          reloadForUpdate();
-        }, 1500);
+        // Nếu là App thật (Native), thử chạy OTA
+        if (Capacitor.isNativePlatform()) {
+          try {
+            await installUpdate(data);
+            setCurrentVersion(data.version || CONFIG.VERSION);
+            alert('Cập nhật thành công! App sẽ khởi động lại.');
+            setTimeout(() => {
+              reloadForUpdate();
+            }, 1500);
+            return; // Thoát nếu OTA thành công
+          } catch (otaErr) {
+            console.error('OTA failed, falling back to browser:', otaErr);
+          }
+        }
+
+        // Nếu không phải Native hoặc OTA lỗi, mở trình duyệt để tải về
+        await Browser.open({ url: data.url });
       }
     } catch (err) {
       console.error('Update execution error:', err);
-      alert('Cap nhat that bai, vui long thu lai sau.');
+      alert('Không thể thực hiện cập nhật. Vui lòng thử lại sau.');
     } finally {
       setUpdating(false);
     }
