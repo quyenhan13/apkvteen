@@ -39,13 +39,14 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onLogout, onWatch }
       const data = await fetchUpdateInfo(manual);
       if (data && data.status === 'success' && data.version) {
         setLatestVersion(data.version);
-        if (manual && !hasNewerVersion(data.version, currentVersion)) {
-          alert('Ung dung da la ban moi nhat!');
-        }
+      } else if (data && data.status === 'error') {
+        setLatestVersion(`Loi: ${data.message || 'Khong ro nguyen nhan'}`);
+      } else {
+        setLatestVersion('Loi: Du lieu khong hop le');
       }
     } catch (err) {
       console.error('Update check error:', err);
-      setLatestVersion('Loi');
+      setLatestVersion('Loi: Khong the ket noi');
     } finally {
       setChecking(false);
     }
@@ -215,10 +216,10 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onLogout, onWatch }
             </div>
           )}
 
-          {!checking && latestVersion === 'Loi' && (
-            <div className="flex items-center gap-2 text-red-400/60">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3 h-3"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              <span className="text-[9px] font-black uppercase tracking-widest">Lỗi kết nối máy chủ</span>
+          {!checking && latestVersion.startsWith('Loi:') && (
+            <div className="flex items-center gap-2 text-red-400/80 bg-red-400/5 p-3 rounded-xl border border-red-400/10">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-4 h-4 shrink-0"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <span className="text-[10px] font-black uppercase tracking-tight leading-tight">{latestVersion}</span>
             </div>
           )}
         </div>
