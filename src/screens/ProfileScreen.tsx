@@ -68,29 +68,40 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onLogout, onWatch }
     try {
       const data = await fetchUpdateInfo(true);
       if (data && data.status === 'success' && data.url) {
-        // Nếu là App thật (Native), thử chạy OTA
         if (Capacitor.isNativePlatform()) {
           try {
+            // Hiển thị thông báo đang tải cho người dùng
+            setLatestVersion('Đang tải bản cập nhật...');
+            
             await installUpdate(data);
+            
+            setLatestVersion('Đang cài đặt...');
             setCurrentVersion(data.version || CONFIG.VERSION);
-            alert('Cập nhật thành công! App sẽ khởi động lại.');
+            
+            alert('Cập nhật thành công! App sẽ khởi động lại ngay bây giờ.');
             setTimeout(() => {
               reloadForUpdate();
-            }, 1500);
-            return; // Thoát nếu OTA thành công
+            }, 1000);
+            return;
           } catch (otaErr) {
-            console.error('OTA failed, falling back to browser:', otaErr);
+            console.error('OTA failed:', otaErr);
+            // Nếu lỗi nặng mới phải mở trình duyệt
+            await Browser.open({ url: data.url });
           }
+        } else {
+          await Browser.open({ url: data.url });
         }
-
-        // Nếu không phải Native hoặc OTA lỗi, mở trình duyệt để tải về
-        await Browser.open({ url: data.url });
       }
     } catch (err) {
       console.error('Update execution error:', err);
-      alert('Không thể thực hiện cập nhật. Vui lòng thử lại sau.');
+      alert('Không thể thực hiện cập nhật tự động. Vui lòng kiểm tra kết nối mạng.');
     } finally {
       setUpdating(false);
+      // Reset lại version hiển thị nếu không thành công
+      if (!isUpToDate) {
+        const data = await fetchUpdateInfo();
+        if (data?.version) setLatestVersion(data.version);
+      }
     }
   };
 
