@@ -89,25 +89,6 @@ const inferMimeType = (name: string, hasThumbnail: boolean) => {
   return 'application/octet-stream';
 };
 
-const getDriveFileIdFromUrl = (rawUrl: string) => {
-  try {
-    const url = new URL(rawUrl, CONFIG.SITE_BASE_URL);
-    if (url.hostname === 'drive.google.com') {
-      const id = url.searchParams.get('id');
-      if (id) return id;
-    }
-
-    const driveFilePath = url.pathname.match(/\/d\/([^/?#]+)/);
-    if (driveFilePath?.[1]) return driveFilePath[1];
-
-    const proxyFilePath = url.pathname.match(/\/f\/([^/?#]+)/);
-    if (proxyFilePath?.[1]) return proxyFilePath[1];
-  } catch {
-    return null;
-  }
-
-  return null;
-};
 
 const isGoogleThumbnailUrl = (rawUrl: string) => {
   try {
