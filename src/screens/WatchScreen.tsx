@@ -335,6 +335,7 @@ const WatchScreen: React.FC<WatchScreenProps> = ({ slug, onBack, onUnauthorized 
   const [activeServer, setActiveServer] = useState(1);
   const [webServers, setWebServers] = useState<Record<string, string>>({});
   const [webPlayer, setWebPlayer] = useState<WebPlayerState>({ html: null, src: null, videoSrc: null });
+  const [zoomMode, setZoomMode] = useState<'contain' | 'cover' | 'fill'>('cover');
   const [playerLoading, setPlayerLoading] = useState(false);
   const [playerError, setPlayerError] = useState<string | null>(null);
   const [isLandscape, setIsLandscape] = useState(() => window.innerWidth > window.innerHeight);
@@ -343,16 +344,17 @@ const WatchScreen: React.FC<WatchScreenProps> = ({ slug, onBack, onUnauthorized 
   const lastSavedTimeRef = useRef(0);
 
   useEffect(() => {
-    // Cho phép xoay màn hình khi xem phim
-    const enableRotation = async () => {
+    // Tự động xoay ngang màn hình và ẩn StatusBar khi xem phim
+    const setupOrientation = async () => {
       try {
-        await OrientationPlugin.unlock();
+        await OrientationPlugin.lock({ orientation: 'landscape' });
+        await StatusBar.hide();
       } catch (e) {
-        console.warn('Orientation lock not supported', e);
+        console.warn('Orientation lock or StatusBar hide failed', e);
       }
     };
     
-    enableRotation();
+    setupOrientation();
 
     return () => {
       // Khóa lại màn hình đứng khi thoát và hiện StatusBar
@@ -743,7 +745,7 @@ const WatchScreen: React.FC<WatchScreenProps> = ({ slug, onBack, onUnauthorized 
       </div>
 
       {/* Video Player Area */}
-      <div className={`relative z-50 w-full bg-[#0a0a0a] shadow-[0_25px_80px_rgba(0,0,0,0.8)] border-b border-white/5 flex flex-col items-center justify-center overflow-hidden ${isLandscape ? 'h-full flex-1' : 'h-[32vh] min-h-[240px] max-h-[58vh] shrink-0'}`}>
+      <div className={`relative z-50 w-full bg-[#0a0a0a] shadow-[0_25px_80px_rgba(0,0,0,0.8)] border-b border-white/5 flex flex-col items-center justify-center overflow-hidden ${isLandscape ? 'h-full flex-1 p-0 m-0' : 'h-[32vh] min-h-[240px] max-h-[58vh] shrink-0'}`}>
         <div className="absolute inset-0 bg-linear-to-b from-black/40 via-transparent to-black/60 pointer-events-none z-10" />
         {playerLoading ? (
           <div className="flex flex-col items-center gap-4 z-20">
@@ -770,6 +772,7 @@ const WatchScreen: React.FC<WatchScreenProps> = ({ slug, onBack, onUnauthorized 
               ref={videoRef}
               src={webPlayer.videoSrc.includes('.m3u8') ? undefined : webPlayer.videoSrc} 
               className="w-full h-full" 
+              style={{ objectFit: zoomMode }}
               controls 
               autoPlay 
               playsInline
@@ -797,7 +800,7 @@ const WatchScreen: React.FC<WatchScreenProps> = ({ slug, onBack, onUnauthorized 
             key={`${currentEp?.episode}-${activeServer}-${webPlayer.src}`}
             src={webPlayer.src}
             className="absolute inset-0 w-full h-full border-0 z-0"
-            style={{ backgroundColor: 'black' }}
+            style={{ backgroundColor: 'black', objectFit: zoomMode }}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
             allowFullScreen
             referrerPolicy="strict-origin-when-cross-origin"
@@ -809,7 +812,7 @@ const WatchScreen: React.FC<WatchScreenProps> = ({ slug, onBack, onUnauthorized 
             key={`${currentEp?.episode}-${activeServer}-html`}
             srcDoc={webPlayer.html}
             className="absolute inset-0 w-full h-full border-0 z-0"
-            style={{ backgroundColor: 'black' }}
+            style={{ backgroundColor: 'black', objectFit: zoomMode }}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
             allowFullScreen
             referrerPolicy="strict-origin-when-cross-origin"
