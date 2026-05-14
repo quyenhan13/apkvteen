@@ -40,7 +40,9 @@ const withTimeout = async <T,>(task: Promise<T>, timeoutMs = UPDATE_TIMEOUT_MS):
 const normalizeVersion = (version: string) => version.trim().replace(/^v/i, '');
 
 const toVersionParts = (version: string) => {
-  const parts = normalizeVersion(version).split('.').map((part) => Number(part));
+  // Chuẩn hóa: "0.0.9-20" -> ["0", "0", "9", "20"]
+  const clean = normalizeVersion(version).replace(/-/g, '.');
+  const parts = clean.split('.').map((part) => Number(part));
   return parts.every((part) => Number.isFinite(part)) ? parts : null;
 };
 
