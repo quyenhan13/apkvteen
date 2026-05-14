@@ -303,7 +303,7 @@ function App() {
 
             {/* Watch Screen Overlay - Preserves tabs in background */}
             <AnimatePresence>
-              {watchingSlug && user.api_token && (
+              {watchingSlug && (
                 <motion.div
                   key={watchingSlug}
                   initial={{ y: '100%' }}
@@ -312,20 +312,26 @@ function App() {
                   transition={{ type: 'spring', damping: 28, stiffness: 220 }}
                   className="fixed inset-0 z-[1000]"
                 >
-                  <ErrorBoundary>
-                    <Suspense fallback={<ScreenLoader />}>
-                      <WatchScreen 
-                        slug={watchingSlug} 
-                        onBack={handleCloseWatch} 
-                        onUnauthorized={handleLogout} 
-                      />
-                    </Suspense>
-                  </ErrorBoundary>
+                  {user.api_token ? (
+                    <ErrorBoundary>
+                      <Suspense fallback={<ScreenLoader />}>
+                        <WatchScreen
+                          slug={watchingSlug}
+                          onBack={handleCloseWatch}
+                          onUnauthorized={handleLogout}
+                        />
+                      </Suspense>
+                    </ErrorBoundary>
+                  ) : (
+                    <div className="h-full bg-[#05070a]">
+                      <ScreenLoader />
+                    </div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {(!watchingSlug || !user.api_token) && <BottomTabs activeTab={activeTab} onTabChange={setActiveTab} />}
+            {!watchingSlug && <BottomTabs activeTab={activeTab} onTabChange={setActiveTab} />}
           </>
       </div>
     </div>

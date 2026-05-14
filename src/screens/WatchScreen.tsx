@@ -81,6 +81,12 @@ const getYouTubeId = (value: string) => {
 const buildYouTubeEmbedUrl = (id: string) =>
   `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1&origin=${encodeURIComponent(CONFIG.SITE_BASE_URL)}&widget_referrer=${encodeURIComponent(CONFIG.SITE_BASE_URL)}`;
 
+type FullscreenDocument = Document & {
+  webkitFullscreenElement?: Element | null;
+  mozFullScreenElement?: Element | null;
+  msFullscreenElement?: Element | null;
+};
+
 const WATCH_PROGRESS_PREFIX = 'vteen_watch_progress_v1';
 const HLS_JS_URL = 'https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js';
 
@@ -218,6 +224,72 @@ const toVteenPath = (value: string) => {
   return `/${value.replace(/^\/+/, '')}`;
 };
 
+const buildEmbedSrc = (value: string) => {
+  const embedPath = toVteenPath(value);
+  return import.meta.env.DEV ? `/__vteen${embedPath}` : `${CONFIG.SITE_BASE_URL}${embedPath}`;
+};
+
+const probeServer = async (url: string, timeoutMs = 1400) => {
+  if (!url) throw new Error('Empty server URL');
+
+  if (Capacitor.isNativePlatform()) {
+    const response = await CapacitorHttp.get({
+      url,
+      connectTimeout: timeoutMs,
+      readTimeout: timeoutMs,
+      responseType: 'text',
+    });
+    if (response.status < 200 || response.status >= 400) throw new Error(`HTTP ${response.status}`);
+    return;
+  }
+
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, {
+      credentials: 'include',
+      signal: controller.signal,
+      cache: 'no-store',
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  } finally {
+    window.clearTimeout(timeout);
+  }
+};
+
+const pickFastestServer = async (servers: Record<string, string>, fallbackKey: string, probeKeys?: string[]) => {
+  const keys = (probeKeys?.length ? probeKeys : Object.keys(servers)).filter((key) => servers[key]);
+  if (keys.length <= 1) return keys[0] || fallbackKey;
+
+  return new Promise<string>((resolve) => {
+    let settled = false;
+    let failed = 0;
+    const resolveFallback = () => {
+      if (settled) return;
+      settled = true;
+      resolve(fallbackKey && servers[fallbackKey] ? fallbackKey : keys[0]);
+    };
+    const fallbackTimer = window.setTimeout(resolveFallback, 1600);
+
+    keys.forEach((key) => {
+      probeServer(buildEmbedSrc(servers[key]))
+        .then(() => {
+          if (settled) return;
+          settled = true;
+          window.clearTimeout(fallbackTimer);
+          resolve(key);
+        })
+        .catch(() => {
+          failed += 1;
+          if (failed >= keys.length) {
+            window.clearTimeout(fallbackTimer);
+            resolveFallback();
+          }
+        });
+    });
+  });
+};
+
 // Đã chuyển sang watch_api.php
 
 
@@ -264,6 +336,7 @@ const WatchScreen: React.FC<WatchScreenProps> = ({ slug, onBack, onUnauthorized 
   const [webPlayer, setWebPlayer] = useState<WebPlayerState>({ html: null, src: null, videoSrc: null });
   const [playerLoading, setPlayerLoading] = useState(false);
   const [playerError, setPlayerError] = useState<string | null>(null);
+  const [isLandscape, setIsLandscape] = useState(() => window.innerWidth > window.innerHeight);
   const videoRef = useRef<HTMLVideoElement>(null);
   const embedFrameRef = useRef<HTMLIFrameElement>(null);
   const lastSavedTimeRef = useRef(0);
@@ -285,6 +358,59 @@ const WatchScreen: React.FC<WatchScreenProps> = ({ slug, onBack, onUnauthorized 
       OrientationPlugin.lock({ orientation: 'portrait' }).catch(() => {});
     };
   }, []);
+
+  useEffect(() => {
+    const updateLayoutMode = () => setIsLandscape(window.innerWidth > window.innerHeight);
+    updateLayoutMode();
+    window.addEventListener('resize', updateLayoutMode);
+    window.addEventListener('orientationchange', updateLayoutMode);
+    return () => {
+      window.removeEventListener('resize', updateLayoutMode);
+      window.removeEventListener('orientationchange', updateLayoutMode);
+    };
+  }, []);
+
+  useEffect(() => {
+    const getFullscreenElement = () => {
+      const fullscreenDocument = document as FullscreenDocument;
+      return document.fullscreenElement
+        || fullscreenDocument.webkitFullscreenElement
+        || fullscreenDocument.mozFullScreenElement
+        || fullscreenDocument.msFullscreenElement
+        || null;
+    };
+    const lockLandscape = () => {
+      OrientationPlugin.lock({ orientation: 'landscape' })
+        .then(() => setIsLandscape(true))
+        .catch((e) => console.warn('Fullscreen landscape lock failed', e));
+    };
+    const lockPortrait = () => {
+      OrientationPlugin.lock({ orientation: 'portrait' })
+        .then(() => setIsLandscape(false))
+        .catch((e) => console.warn('Fullscreen portrait lock failed', e));
+    };
+    const handleFullscreenChange = () => {
+      if (getFullscreenElement()) lockLandscape();
+      else lockPortrait();
+    };
+    const video = videoRef.current;
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+    video?.addEventListener('webkitbeginfullscreen', lockLandscape);
+    video?.addEventListener('webkitendfullscreen', lockPortrait);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+      video?.removeEventListener('webkitbeginfullscreen', lockLandscape);
+      video?.removeEventListener('webkitendfullscreen', lockPortrait);
+    };
+  }, [webPlayer.videoSrc]);
 
   const selectEpisode = (ep: Episode, movieDetails = details) => {
     setCurrentEp(ep);
@@ -419,9 +545,13 @@ const WatchScreen: React.FC<WatchScreenProps> = ({ slug, onBack, onUnauthorized 
       if (checkCancelled()) return;
       setWebServers(servers);
 
-      const selectedKey = servers[String(activeServer)]
+      const fallbackKey = servers[String(activeServer)]
         ? String(activeServer)
         : Object.keys(servers)[0];
+      const directKeys = Object.keys(sources).filter((key) => sources[key]?.url);
+      const selectedKey = directKeys.includes(fallbackKey)
+        ? fallbackKey
+        : directKeys[0] || await pickFastestServer(servers, fallbackKey, Object.keys(servers).slice(0, 2));
 
       if (!selectedKey || !servers[selectedKey]) {
         throw new Error('Không tìm thấy link máy chủ');
@@ -442,11 +572,7 @@ const WatchScreen: React.FC<WatchScreenProps> = ({ slug, onBack, onUnauthorized 
           setWebPlayer({ html: null, src: null, videoSrc: directSource.url });
         }
       } else {
-        // Fallback: Dùng iframe embed qua srcDoc
-        const embedPath = toVteenPath(servers[selectedKey]);
-        const embedSrc = import.meta.env.DEV
-          ? `/__vteen${embedPath}`
-          : `${CONFIG.SITE_BASE_URL}${embedPath}`;
+        const embedSrc = buildEmbedSrc(servers[selectedKey]);
         setWebPlayer({ html: null, src: embedSrc, videoSrc: null });
       }
 
@@ -585,8 +711,8 @@ const WatchScreen: React.FC<WatchScreenProps> = ({ slug, onBack, onUnauthorized 
       <div className="absolute inset-0 z-[-2] bg-[#05070a]" />
       <UniverseBackground />
       {/* Header Bar */}
-      <div 
-        className="relative z-10 shrink-0 px-4 pb-4 flex items-center gap-3 border-b border-white/10 bg-background/10 backdrop-blur-xl"
+      <div
+        className={`relative z-10 shrink-0 px-4 pb-4 items-center gap-3 border-b border-white/10 bg-background/10 backdrop-blur-xl ${isLandscape ? 'hidden' : 'flex'}`}
         style={{ paddingTop: 'calc(env(safe-area-inset-top) + 2.5rem)', minHeight: 'calc(env(safe-area-inset-top) + 6rem)' }}
       >
         <button 
@@ -604,9 +730,8 @@ const WatchScreen: React.FC<WatchScreenProps> = ({ slug, onBack, onUnauthorized 
       </div>
 
       {/* Video Player Area */}
-      <div className="relative z-50 h-[32vh] min-h-[240px] max-h-[58vh] w-full shrink-0 bg-[#0a0a0a] shadow-[0_25px_80px_rgba(0,0,0,0.8)] border-b border-white/5 flex flex-col items-center justify-center overflow-hidden">
+      <div className={`relative z-50 w-full bg-[#0a0a0a] shadow-[0_25px_80px_rgba(0,0,0,0.8)] border-b border-white/5 flex flex-col items-center justify-center overflow-hidden ${isLandscape ? 'h-full flex-1' : 'h-[32vh] min-h-[240px] max-h-[58vh] shrink-0'}`}>
         <div className="absolute inset-0 bg-linear-to-b from-black/40 via-transparent to-black/60 pointer-events-none z-10" />
-        
         {playerLoading ? (
           <div className="flex flex-col items-center gap-4 z-20">
             <div className="relative">
@@ -687,7 +812,7 @@ const WatchScreen: React.FC<WatchScreenProps> = ({ slug, onBack, onUnauthorized 
 
 
       {/* Server Selector Buttons */}
-      <div className="relative z-10 shrink-0 px-6 py-4 flex gap-3 border-b border-white/5 bg-[#05070a]/20 backdrop-blur-sm">
+      <div className={`relative z-10 shrink-0 px-6 py-4 gap-3 border-b border-white/5 bg-[#05070a]/20 backdrop-blur-sm ${isLandscape ? 'hidden' : 'flex'}`}>
         <button 
           disabled={playerLoading}
           onClick={() => setActiveServer(1)}
@@ -705,7 +830,7 @@ const WatchScreen: React.FC<WatchScreenProps> = ({ slug, onBack, onUnauthorized 
       </div>
 
       {/* Info Area */}
-      <div className="relative z-10 flex-1 min-h-0 overflow-y-auto p-6 flex flex-col gap-6">
+      <div className={`relative z-10 flex-1 min-h-0 overflow-y-auto p-6 flex-col gap-6 ${isLandscape ? 'hidden' : 'flex'}`}>
         <div className="flex justify-between items-start">
           <div className="flex-1">
             <h1 className="text-2xl font-black text-white leading-tight">{details.title}</h1>

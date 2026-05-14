@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import Logo from '../components/Logo';
@@ -15,13 +15,21 @@ interface LoginResponse {
 }
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const usernameRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    const username = usernameRef.current?.value.trim() || '';
+    const password = passwordRef.current?.value || '';
+
+    if (!username || !password) {
+      setError('Vui lòng nhập đầy đủ tài khoản và mật khẩu');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -89,12 +97,15 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
           <form onSubmit={handleLogin} className="flex flex-col gap-5">
             <div className="relative">
               <input
+                ref={usernameRef}
                 type="text"
                 name="username"
-                autoComplete="username"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="none"
+                spellCheck={false}
+                inputMode="text"
                 placeholder="Tên đăng nhập"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
                 className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 px-6 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-primary/50 focus:bg-white/[0.06] transition-all"
                 required
               />
@@ -102,12 +113,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
             
             <div className="relative">
               <input
+                ref={passwordRef}
                 type="password"
                 name="password"
-                autoComplete="current-password"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="none"
+                spellCheck={false}
                 placeholder="Mật khẩu"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 px-6 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-primary/50 focus:bg-white/[0.06] transition-all"
                 required
               />

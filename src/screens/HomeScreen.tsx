@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState, useDeferredValue } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, useDeferredValue } from 'react';
 import { motion } from 'framer-motion';
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import Avatar from '../components/Avatar';
@@ -77,6 +77,7 @@ const writeMoviesCache = (cache: MoviesCache) => {
 };
 
 const HomeScreen: React.FC<HomeProps> = ({ onWatch, isWatching }) => {
+  const rootRef = useRef<HTMLDivElement>(null);
   const [initialCache] = useState(() => readMoviesCache(1));
   const [movies, setMovies] = useState<Movie[]>(() => initialCache?.movies || []);
   const [history, setHistory] = useState<HistoryItem[]>(() => getHistory());
@@ -95,6 +96,7 @@ const HomeScreen: React.FC<HomeProps> = ({ onWatch, isWatching }) => {
   const [page, setPage] = useState(() => initialCache?.page || 1);
   const [totalPages, setTotalPages] = useState(() => initialCache?.totalPages || 1);
   const [featuredIndex, setFeaturedIndex] = useState(0);
+  const [headerCompact, setHeaderCompact] = useState(false);
 
   const deferredSearch = useDeferredValue(searchTerm);
 
@@ -173,6 +175,28 @@ const HomeScreen: React.FC<HomeProps> = ({ onWatch, isWatching }) => {
     return () => window.clearTimeout(timer);
   }, [fetchMovies]);
 
+  useEffect(() => {
+    const scrollParent = rootRef.current?.parentElement;
+    if (!scrollParent) return;
+
+    let frame = 0;
+    const updateHeader = () => {
+      frame = 0;
+      setHeaderCompact(scrollParent.scrollTop > 44);
+    };
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(updateHeader);
+    };
+
+    updateHeader();
+    scrollParent.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      scrollParent.removeEventListener('scroll', onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, []);
+
   const filteredMovies = useMemo(() => {
     let result = movies;
     if (activeCategory !== 'Tất cả') {
@@ -196,9 +220,12 @@ const HomeScreen: React.FC<HomeProps> = ({ onWatch, isWatching }) => {
   }, [featuredMovies.length]);
 
   return (
-    <div className="flex flex-col gap-6 pb-24">
-      <header className="sticky top-0 z-50 border-b border-white/5 bg-[#05070a]/80 backdrop-blur-xl px-5 pb-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1rem)' }}>
-        <div className="flex items-center justify-between gap-4 mb-4">
+    <div ref={rootRef} className="flex flex-col gap-6 pb-24">
+      <header
+        className={`sticky top-0 z-50 border-b border-white/5 bg-[#05070a]/88 px-5 backdrop-blur-xl transition-[padding,background-color] duration-200 ${headerCompact ? 'pb-2' : 'pb-4'}`}
+        style={{ paddingTop: headerCompact ? 'calc(env(safe-area-inset-top) + 0.45rem)' : 'calc(env(safe-area-inset-top) + 1rem)' }}
+      >
+        <div className={`flex items-center justify-between gap-3 overflow-hidden transition-all duration-200 ${headerCompact ? 'mb-2 max-h-0 opacity-0' : 'mb-4 max-h-12 opacity-100'}`}>
           <Logo size="sm" />
           <div className="flex items-center gap-3">
             <button onClick={() => fetchMovies(1)} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/30 active:scale-90">
@@ -208,7 +235,7 @@ const HomeScreen: React.FC<HomeProps> = ({ onWatch, isWatching }) => {
           </div>
         </div>
 
-        <div className="relative mb-4 group">
+        <div className={`relative group transition-all duration-200 ${headerCompact ? 'mb-2' : 'mb-4'}`}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-primary transition-colors"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
           <input 
             type="text"
@@ -217,13 +244,13 @@ const HomeScreen: React.FC<HomeProps> = ({ onWatch, isWatching }) => {
             placeholder="Tìm phim trong vũ trụ..." 
             value={searchTerm} 
             onChange={(e) => setSearchTerm(e.target.value)} 
-            className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm font-bold text-white placeholder:text-white/20 focus:outline-none focus:border-primary/20 focus:bg-white/[0.08] transition-all backdrop-blur-md" 
+            className={`w-full bg-white/5 border border-white/5 rounded-2xl pl-12 pr-4 text-sm font-bold text-white placeholder:text-white/20 focus:outline-none focus:border-primary/20 focus:bg-white/[0.08] transition-all backdrop-blur-md ${headerCompact ? 'py-3' : 'py-4'}`}
           />
         </div>
 
         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
           {categories.map((cat) => (
-            <button key={cat} onClick={() => { setActiveCategory(cat); setFeaturedIndex(0); }} className={`whitespace-nowrap px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeCategory === cat ? 'bg-primary text-black' : 'bg-white/5 text-white/30'}`}>{cat}</button>
+            <button key={cat} onClick={() => { setActiveCategory(cat); setFeaturedIndex(0); }} className={`whitespace-nowrap rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${headerCompact ? 'px-4 py-1.5' : 'px-5 py-2'} ${activeCategory === cat ? 'bg-primary text-black' : 'bg-white/5 text-white/30'}`}>{cat}</button>
           ))}
         </div>
       </header>
