@@ -68,7 +68,7 @@ export const hasNewerVersion = (remoteVersion?: string, currentVersion = getCurr
 };
 
 export const fetchUpdateInfo = async (manual = false, timeoutMs = UPDATE_TIMEOUT_MS) => {
-  const url = `${CONFIG.API_BASE_URL}/update.php?nocache=${manual ? '1' : '0'}&t=${Date.now()}`;
+  const url = `${CONFIG.API_BASE_URL}/update_apk.php?nocache=${manual ? '1' : '0'}&t=${Date.now()}`;
 
   if (Capacitor.isNativePlatform()) {
     const response = await withTimeout(CapacitorHttp.get({ url }), timeoutMs);
