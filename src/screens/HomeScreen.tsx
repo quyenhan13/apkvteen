@@ -244,7 +244,7 @@ const HomeScreen: React.FC<HomeProps> = ({ onWatch, isWatching }) => {
             placeholder="Tìm phim trong vũ trụ..." 
             value={searchTerm} 
             onChange={(e) => setSearchTerm(e.target.value)} 
-            className={`w-full bg-white/5 border border-white/5 rounded-2xl pl-12 pr-4 text-sm font-bold text-white placeholder:text-white/20 focus:outline-none focus:border-primary/20 focus:bg-white/[0.08] transition-all backdrop-blur-md ${headerCompact ? 'py-3' : 'py-4'}`}
+            className={`w-full bg-white/10 border border-white/5 rounded-2xl pl-12 pr-4 text-sm font-bold text-white placeholder:text-white/20 focus:outline-none focus:border-primary/20 focus:bg-white/[0.12] transition-all ${headerCompact ? 'py-3' : 'py-4'}`}
           />
         </div>
 

@@ -71,7 +71,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="fixed inset-0 flex flex-col items-center justify-center p-8 z-[200] bg-black/40 backdrop-blur-sm"
+      className="fixed inset-0 flex flex-col items-center justify-center p-8 z-[200] bg-[#05070a]/95"
     >
       <div className="w-full max-w-sm z-10">
         <motion.header 
@@ -87,7 +87,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="glass p-10 rounded-[3rem] border border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] relative overflow-hidden"
+          className="glass-solid p-10 rounded-[3rem] border border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] relative overflow-hidden"
         >
           {/* Subtle light streak */}
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
@@ -106,8 +106,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                 spellCheck={false}
                 inputMode="text"
                 placeholder="Tên đăng nhập"
-                className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 px-6 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-primary/50 focus:bg-white/[0.06] transition-all"
+                className="w-full bg-white/[0.05] border border-white/10 rounded-2xl py-4 px-6 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-primary/50 focus:bg-white/[0.08] transition-all"
                 required
+                autoFocus
               />
             </div>
             
@@ -121,7 +122,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                 autoCapitalize="none"
                 spellCheck={false}
                 placeholder="Mật khẩu"
-                className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 px-6 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-primary/50 focus:bg-white/[0.06] transition-all"
+                className="w-full bg-white/[0.05] border border-white/10 rounded-2xl py-4 px-6 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-primary/50 focus:bg-white/[0.08] transition-all"
                 required
               />
             </div>
@@ -153,7 +154,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
           transition={{ delay: 0.5 }}
           className="mt-10 text-center text-white/20 text-[9px] uppercase tracking-widest font-medium"
         >
-          Authorized Access Only • VTeen iOS v1.0
+          Authorized Access Only • VTEEN 108 V1.8
         </motion.p>
       </div>
     </motion.div>

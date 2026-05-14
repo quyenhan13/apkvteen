@@ -15,6 +15,7 @@ import './index.css'
 const WatchScreen = lazy(() => import('./screens/WatchScreen'))
 const ProfileScreen = lazy(() => import('./screens/ProfileScreen'))
 const DriverScreen = lazy(() => import('./screens/DriverScreen'))
+const LoginScreen = lazy(() => import('./screens/LoginScreen'))
 
 interface User {
   api_token: string;
@@ -219,7 +220,16 @@ function App() {
     localStorage.removeItem(WATCHING_SLUG_KEY);
     setActiveTab('home');
     setWatchingSlug(null);
+    setAuthError('manual'); // Trigger login screen
     setAuthRetry((value) => value + 1);
+  };
+
+  const handleLoginSuccess = (userData: unknown) => {
+    if (isUser(userData)) {
+      setUser(userData);
+      localStorage.setItem('vteen_user', JSON.stringify(userData));
+      setAuthError(null);
+    }
   };
 
   return (
@@ -267,13 +277,9 @@ function App() {
       <div className="relative z-10 h-full">
         <>
             {authError && !user.api_token && (
-              <button
-                type="button"
-                onClick={() => setAuthRetry((value) => value + 1)}
-                className="fixed right-4 top-[calc(env(safe-area-inset-top)+1rem)] z-[1200] rounded-xl border border-red-400/20 bg-red-500/12 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-red-200 backdrop-blur-xl"
-              >
-                Thu lai dang nhap
-              </button>
+              <Suspense fallback={<div className="fixed inset-0 bg-[#05070a] z-[1500]" />}>
+                <LoginScreen onLoginSuccess={handleLoginSuccess} />
+              </Suspense>
             )}
             {/* Tab Container - Always mounted to preserve state */}
             <main className="h-full w-full relative">

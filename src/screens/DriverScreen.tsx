@@ -614,7 +614,7 @@ const DriverScreen: React.FC<DriverProps> = ({ user }) => {
               placeholder="Tìm kiếm tệp trong vũ trụ..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#18181b]/60 border border-white/5 rounded-2xl py-4 pl-12 pr-14 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-primary/50 focus:bg-[#18181b]/80 transition-all backdrop-blur-md"
+              className="w-full bg-[#18181b]/90 border border-white/5 rounded-2xl py-4 pl-12 pr-14 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-primary/50 focus:bg-[#18181b] transition-all"
             />
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-5 h-5">

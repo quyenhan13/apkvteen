@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ScreenOrientation as OrientationPlugin } from '@capacitor/screen-orientation';
+import { StatusBar, Style } from '@capacitor/status-bar';
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import { getHistory, removeFromHistory, saveToHistory } from '../storage/watchHistory';
 import { toggleFavorite, isFavorite } from '../storage/favorites';
@@ -354,8 +355,9 @@ const WatchScreen: React.FC<WatchScreenProps> = ({ slug, onBack, onUnauthorized 
     enableRotation();
 
     return () => {
-      // Khóa lại màn hình đứng khi thoát
+      // Khóa lại màn hình đứng khi thoát và hiện StatusBar
       OrientationPlugin.lock({ orientation: 'portrait' }).catch(() => {});
+      StatusBar.show().catch(() => {});
     };
   }, []);
 
@@ -381,17 +383,28 @@ const WatchScreen: React.FC<WatchScreenProps> = ({ slug, onBack, onUnauthorized 
     };
     const lockLandscape = () => {
       OrientationPlugin.lock({ orientation: 'landscape' })
-        .then(() => setIsLandscape(true))
+        .then(() => {
+          setIsLandscape(true);
+          StatusBar.hide().catch(() => {});
+        })
         .catch((e) => console.warn('Fullscreen landscape lock failed', e));
     };
     const lockPortrait = () => {
       OrientationPlugin.lock({ orientation: 'portrait' })
-        .then(() => setIsLandscape(false))
+        .then(() => {
+          setIsLandscape(false);
+          StatusBar.show().catch(() => {});
+        })
         .catch((e) => console.warn('Fullscreen portrait lock failed', e));
     };
     const handleFullscreenChange = () => {
-      if (getFullscreenElement()) lockLandscape();
-      else lockPortrait();
+      const isFull = getFullscreenElement();
+      if (isFull) {
+        // Delay một chút để trình duyệt ổn định trạng thái fullscreen trước khi xoay
+        setTimeout(lockLandscape, 100);
+      } else {
+        lockPortrait();
+      }
     };
     const video = videoRef.current;
 

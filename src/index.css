@@ -68,6 +68,12 @@ input {
   box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.3);
 }
 
+.glass-solid {
+  background: rgba(10, 12, 18, 0.95);
+  border: 1px solid var(--color-border-glass);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+}
+
 .tap-target {
   touch-action: manipulation;
 }

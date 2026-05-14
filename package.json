@@ -15,6 +15,7 @@
     "@capacitor/core": "^8.3.1",
     "@capacitor/ios": "^8.3.1",
     "@capacitor/screen-orientation": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.2",
     "@capgo/capacitor-updater": "^8.45.10",
     "@tailwindcss/vite": "^4.2.4",
     "autoprefixer": "^10.5.0",
