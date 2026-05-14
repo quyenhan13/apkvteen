@@ -7,6 +7,7 @@ export interface UpdateInfo {
   version?: string;
   url?: string;
   notes?: string;
+  message?: string;
 }
 
 const UPDATE_TIMEOUT_MS = 8000;

@@ -335,7 +335,7 @@ const WatchScreen: React.FC<WatchScreenProps> = ({ slug, onBack, onUnauthorized 
   const [activeServer, setActiveServer] = useState(1);
   const [webServers, setWebServers] = useState<Record<string, string>>({});
   const [webPlayer, setWebPlayer] = useState<WebPlayerState>({ html: null, src: null, videoSrc: null });
-  const [zoomMode, setZoomMode] = useState<'contain' | 'cover' | 'fill'>('cover');
+  const [zoomMode] = useState<'contain' | 'cover' | 'fill'>('cover');
   const [playerLoading, setPlayerLoading] = useState(false);
   const [playerError, setPlayerError] = useState<string | null>(null);
   const [isLandscape, setIsLandscape] = useState(() => window.innerWidth > window.innerHeight);
