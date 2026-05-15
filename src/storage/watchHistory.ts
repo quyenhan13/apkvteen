@@ -43,7 +43,6 @@ const pushHistoryToCloud = async (slug: string, ep: string) => {
 
 export const syncHistoryFromCloud = (items: HistoryItem[]) => {
   if (!items || !Array.isArray(items)) return;
-  const local = getHistory();
   
   // Merge: Ưu tiên dữ liệu local mới hơn nếu có trùng (hoặc đơn giản là gộp lại)
   // Ở đây chúng ta ghi đè bằng dữ liệu cloud mới nhất
