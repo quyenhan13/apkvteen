@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { ChangeEvent, CompositionEvent, FormEvent, KeyboardEvent } from 'react';
 
-type TextInputEvent =
-  | ChangeEvent<HTMLInputElement>
-  | FormEvent<HTMLInputElement>
-  | CompositionEvent<HTMLInputElement>
-  | KeyboardEvent<HTMLInputElement>;
+type ImeSafeElement = HTMLInputElement | HTMLTextAreaElement;
+
+type TextInputEvent<TElement extends ImeSafeElement> =
+  | ChangeEvent<TElement>
+  | FormEvent<TElement>
+  | CompositionEvent<TElement>
+  | KeyboardEvent<TElement>;
 
 interface ImeSafeInputOptions {
   value: string;
@@ -20,14 +22,14 @@ const defer = (callback: () => void) => {
   window.setTimeout(callback, 0);
 };
 
-export const useImeSafeInput = ({ value, onValueChange }: ImeSafeInputOptions) => {
-  const ref = useRef<HTMLInputElement>(null);
+export const useImeSafeInput = <TElement extends ImeSafeElement = HTMLInputElement>({ value, onValueChange }: ImeSafeInputOptions) => {
+  const ref = useRef<TElement>(null);
 
-  const syncFromElement = useCallback((input: HTMLInputElement) => {
+  const syncFromElement = useCallback((input: TElement) => {
     onValueChange(input.value);
   }, [onValueChange]);
 
-  const syncFromReactEvent = useCallback((event: TextInputEvent) => {
+  const syncFromReactEvent = useCallback((event: TextInputEvent<TElement>) => {
     syncFromElement(event.currentTarget);
   }, [syncFromElement]);
 
@@ -78,5 +80,9 @@ export const useImeSafeInput = ({ value, onValueChange }: ImeSafeInputOptions) =
     onCompositionUpdate: syncFromReactEvent,
     onCompositionEnd: syncFromReactEvent,
     onBeforeInput: syncAfterNativeEvent,
+    autoCapitalize: 'none',
+    autoComplete: 'off',
+    autoCorrect: 'off',
+    spellCheck: false,
   };
 };

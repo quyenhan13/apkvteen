@@ -100,7 +100,7 @@ const HomeScreen: React.FC<HomeProps> = ({ onWatch, isWatching }) => {
   const [headerCompact, setHeaderCompact] = useState(false);
 
   const deferredSearch = useDeferredValue(searchTerm);
-  const searchInput = useImeSafeInput({ value: searchTerm, onValueChange: setSearchTerm });
+  const searchInput = useImeSafeInput<HTMLTextAreaElement>({ value: searchTerm, onValueChange: setSearchTerm });
 
   const fetchMovies = useCallback(async (pageNum: number) => {
     const cache = readMoviesCache(pageNum);
@@ -239,13 +239,19 @@ const HomeScreen: React.FC<HomeProps> = ({ onWatch, isWatching }) => {
 
         <div className={`relative group transition-all duration-200 ${headerCompact ? 'mb-2' : 'mb-4'}`}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-primary transition-colors"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-          <input 
-            type="text"
+          <textarea
             id="movie-search"
             name="movie-search"
+            rows={1}
             placeholder="Tìm phim trong vũ trụ..." 
             {...searchInput}
-            className={`w-full bg-white/10 border border-white/5 rounded-2xl pl-12 pr-4 text-sm font-bold text-white placeholder:text-white/20 focus:outline-none focus:border-primary/20 focus:bg-white/[0.12] transition-all ${headerCompact ? 'py-3' : 'py-4'}`}
+            className={`block w-full resize-none overflow-hidden bg-white/10 border border-white/5 rounded-2xl pl-12 pr-4 text-sm font-bold leading-tight text-white placeholder:text-white/20 focus:outline-none focus:border-primary/20 focus:bg-white/[0.12] transition-all ${headerCompact ? 'py-3' : 'py-4'}`}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                event.currentTarget.blur();
+              }
+            }}
           />
         </div>
 

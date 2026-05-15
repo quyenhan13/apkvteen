@@ -20,8 +20,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const usernameInput = useImeSafeInput({ value: username, onValueChange: setUsername });
-  const passwordInput = useImeSafeInput({ value: password, onValueChange: setPassword });
+  const usernameInput = useImeSafeInput<HTMLTextAreaElement>({ value: username, onValueChange: setUsername });
+  const passwordInput = useImeSafeInput<HTMLTextAreaElement>({ value: password, onValueChange: setPassword });
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,22 +84,34 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
           
           <form onSubmit={handleLogin} className="flex flex-col gap-5">
             <div className="bg-white rounded-lg overflow-hidden">
-              <input
-                type="text"
+              <textarea
                 {...usernameInput}
+                rows={1}
                 placeholder="Tên đăng nhập"
-                className="w-full bg-white text-black py-4 px-4 text-lg focus:outline-none"
+                className="block w-full resize-none overflow-hidden bg-white text-black py-4 px-4 text-lg leading-tight focus:outline-none"
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    event.currentTarget.form?.requestSubmit();
+                  }
+                }}
                 required
               />
             </div>
             
             <div className="bg-white rounded-lg overflow-hidden">
-              <input
-                type="text"
+              <textarea
                 {...passwordInput}
+                rows={1}
                 placeholder="Mật khẩu"
-                className="w-full bg-white text-black py-4 px-4 text-lg focus:outline-none"
+                className="block w-full resize-none overflow-hidden bg-white text-black py-4 px-4 text-lg leading-tight focus:outline-none"
                 style={{ WebkitTextSecurity: 'disc' } as React.CSSProperties}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    event.currentTarget.form?.requestSubmit();
+                  }
+                }}
                 required
               />
             </div>
@@ -118,10 +130,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
               {loading ? 'Đang xác thực...' : 'Đăng nhập ngay'}
             </button>
           </form>
-
-          <p className="mt-6 text-[10px] text-white/30 text-center leading-relaxed">
-            * Nếu không thấy chữ hiện ra, vui lòng chuyển sang <span className="text-cyan-500 font-bold">bàn phím Gboard</span> để có trải nghiệm tốt nhất.
-          </p>
         </div>
       </div>
     </div>

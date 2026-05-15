@@ -43,7 +43,8 @@ body {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 
@@ -51,7 +52,8 @@ button {
   -webkit-touch-callout: none;
 }
 
-input {
+input,
+textarea {
   min-width: 0;
 }
 

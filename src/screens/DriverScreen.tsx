@@ -305,7 +305,7 @@ const DriverScreen: React.FC<DriverProps> = ({ user }) => {
 
   const isAdmin = user?.role === 'admin';
   const quotaPercent = quota ? getQuotaPercent(quota) : 0;
-  const driveSearchInput = useImeSafeInput({ value: searchQuery, onValueChange: setSearchQuery });
+  const driveSearchInput = useImeSafeInput<HTMLTextAreaElement>({ value: searchQuery, onValueChange: setSearchQuery });
 
   const handleDelete = async (fileId: string, account: string) => {
     if (!window.confirm('Bạn có chắc muốn xóa tệp này?')) return;
@@ -515,7 +515,7 @@ const DriverScreen: React.FC<DriverProps> = ({ user }) => {
     return result;
   };
 
-  const submitSearch = (event?: React.FormEvent, forceRefresh = false) => {
+  const submitSearch = (event?: React.SyntheticEvent, forceRefresh = false) => {
     event?.preventDefault();
     const nextQuery = (driveSearchInput.ref.current?.value ?? searchQuery).trim();
     setSearchQuery(nextQuery);
@@ -610,13 +610,19 @@ const DriverScreen: React.FC<DriverProps> = ({ user }) => {
         {/* Search Bar */}
         <div className="px-6 mt-5">
           <form onSubmit={submitSearch} className="relative group">
-            <input
-              type="text"
+            <textarea
               id="drive-search"
               name="drive-search"
+              rows={1}
               placeholder="Tìm kiếm tệp trong vũ trụ..."
               {...driveSearchInput}
-              className="w-full bg-[#18181b]/90 border border-white/5 rounded-2xl py-4 pl-12 pr-14 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-primary/50 focus:bg-[#18181b] transition-all"
+              className="block w-full resize-none overflow-hidden bg-[#18181b]/90 border border-white/5 rounded-2xl py-4 pl-12 pr-14 text-sm leading-tight text-white placeholder:text-white/20 focus:outline-none focus:border-primary/50 focus:bg-[#18181b] transition-all"
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  submitSearch(event);
+                }
+              }}
             />
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-5 h-5">
