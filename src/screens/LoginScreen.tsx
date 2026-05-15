@@ -14,7 +14,6 @@ interface LoginResponse {
 }
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
-  // Dùng Ref thay vì State để tránh xung đột với bộ gõ tiếng Việt
   const usernameRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
@@ -22,8 +21,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Lấy giá trị trực tiếp từ DOM khi nhấn nút
     const username = usernameRef.current?.value.trim() || '';
     const password = passwordRef.current?.value || '';
 
@@ -70,48 +67,42 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="absolute inset-0 z-[2000] bg-[#05070a] overflow-y-auto">
-      <div className="min-h-full flex flex-col items-center justify-center p-6">
+    <div className="fixed inset-0 z-[2000] bg-[#05070a] flex flex-col items-center justify-center p-6 overflow-hidden">
+      <div className="w-full max-w-sm">
         <header className="text-center mb-10 shrink-0">
           <Logo size="lg" layout="vertical" />
         </header>
 
-        <div className="w-full max-w-sm bg-[#1a1a1a] p-8 rounded-2xl border border-[#333]">
-          <h2 className="text-lg font-black mb-8 text-white text-center uppercase tracking-[0.2em]">Đăng nhập</h2>
+        <div className="bg-white p-8 rounded-3xl shadow-2xl">
+          <h2 className="text-xl font-bold mb-8 text-black text-center uppercase tracking-widest">Đăng nhập</h2>
           
           <form onSubmit={handleLogin} className="flex flex-col gap-5">
             <div className="relative">
+              <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-2">Tên đăng nhập</label>
               <input
-                ref={usernameRef} // Sử dụng ref
-                type="text"
-                autoComplete="username"
-                autoCorrect="off"
-                autoCapitalize="none"
-                spellCheck={false}
-                placeholder="Tên đăng nhập"
-                className="w-full bg-[#222] border-2 border-[#444] rounded-xl py-4 px-6 text-base text-white focus:outline-none focus:border-cyan-500"
+                ref={usernameRef}
+                type="email" // Dùng email để bàn phím xử lý "sạch" hơn
+                placeholder="Nhập tài khoản..."
+                className="w-full bg-gray-100 border-2 border-gray-200 rounded-xl py-4 px-6 text-base text-black focus:outline-none focus:border-cyan-500"
                 required
-                defaultValue="" // Quan trọng: Để trình duyệt tự quản lý
+                defaultValue=""
               />
             </div>
             
             <div className="relative">
+              <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-2">Mật khẩu</label>
               <input
-                ref={passwordRef} // Sử dụng ref
+                ref={passwordRef}
                 type="password"
-                autoComplete="current-password"
-                autoCorrect="off"
-                autoCapitalize="none"
-                spellCheck={false}
-                placeholder="Mật khẩu"
-                className="w-full bg-[#222] border-2 border-[#444] rounded-xl py-4 px-6 text-base text-white focus:outline-none focus:border-cyan-500"
+                placeholder="Nhập mật khẩu..."
+                className="w-full bg-gray-100 border-2 border-gray-200 rounded-xl py-4 px-6 text-base text-black focus:outline-none focus:border-cyan-500"
                 required
-                defaultValue="" // Quan trọng: Để trình duyệt tự quản lý
+                defaultValue=""
               />
             </div>
 
             {error && (
-              <p className="text-red-500 text-xs text-center font-black uppercase">
+              <p className="text-red-500 text-xs text-center font-bold">
                 {error}
               </p>
             )}
@@ -119,9 +110,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
             <button
               type="submit"
               disabled={loading}
-              className="mt-4 bg-cyan-500 text-black py-4 rounded-xl font-black text-xs tracking-widest uppercase active:bg-cyan-400"
+              className="mt-4 bg-black text-white py-4 rounded-xl font-black text-xs tracking-widest uppercase active:scale-95 disabled:opacity-50"
             >
-              {loading ? 'Đang xử lý...' : 'Đăng nhập ngay'}
+              {loading ? 'Đang xác thực...' : 'Đăng nhập ngay'}
             </button>
           </form>
         </div>
