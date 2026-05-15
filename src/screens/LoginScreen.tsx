@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import Logo from '../components/Logo';
 import { CONFIG } from '../config';
@@ -14,14 +14,20 @@ interface LoginResponse {
 }
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  // Dùng Ref thay vì State để tránh xung đột với bộ gõ tiếng Việt
+  const usernameRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username.trim() || !password) {
+    
+    // Lấy giá trị trực tiếp từ DOM khi nhấn nút
+    const username = usernameRef.current?.value.trim() || '';
+    const password = passwordRef.current?.value || '';
+
+    if (!username || !password) {
       setError('Vui lòng nhập đầy đủ tài khoản và mật khẩu');
       return;
     }
@@ -31,7 +37,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
 
     try {
       const url = `${CONFIG.API_BASE_URL}/login.php`;
-      const body = { username: username.trim(), password };
+      const body = { username, password };
       let result: LoginResponse;
 
       if (Capacitor.isNativePlatform()) {
@@ -76,32 +82,31 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
           <form onSubmit={handleLogin} className="flex flex-col gap-5">
             <div className="relative">
               <input
+                ref={usernameRef} // Sử dụng ref
                 type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
                 autoComplete="username"
-                autoCorrect="on" // Bật để hỗ trợ bàn phím tiếng Việt
+                autoCorrect="off"
                 autoCapitalize="none"
-                spellCheck={true} // Bật để hỗ trợ bàn phím tiếng Việt
-                inputMode="text"
+                spellCheck={false}
                 placeholder="Tên đăng nhập"
                 className="w-full bg-[#222] border-2 border-[#444] rounded-xl py-4 px-6 text-base text-white focus:outline-none focus:border-cyan-500"
                 required
+                defaultValue="" // Quan trọng: Để trình duyệt tự quản lý
               />
             </div>
             
             <div className="relative">
               <input
+                ref={passwordRef} // Sử dụng ref
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
-                autoCorrect="on" // Bật để hỗ trợ bàn phím tiếng Việt
+                autoCorrect="off"
                 autoCapitalize="none"
-                spellCheck={true} // Bật để hỗ trợ bàn phím tiếng Việt
+                spellCheck={false}
                 placeholder="Mật khẩu"
                 className="w-full bg-[#222] border-2 border-[#444] rounded-xl py-4 px-6 text-base text-white focus:outline-none focus:border-cyan-500"
                 required
+                defaultValue="" // Quan trọng: Để trình duyệt tự quản lý
               />
             </div>
 
