@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import Logo from '../components/Logo';
 import { CONFIG } from '../config';
@@ -14,36 +14,19 @@ interface LoginResponse {
 }
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
-  const usernameRef = useRef<HTMLInputElement>(null);
-  const passwordRef = useRef<HTMLInputElement>(null);
+  // Dùng Controlled Input như bạn chỉ dẫn
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const handleNativeInput = (e: Event) => {
-      const target = e.target as HTMLInputElement;
-      // Ép redraw cực mạnh bằng cách thay đổi nhẹ margin
-      target.style.marginTop = target.style.marginTop === '1px' ? '0px' : '1px';
-    };
-
-    const uInput = usernameRef.current;
-    const pInput = passwordRef.current;
-
-    if (uInput) uInput.addEventListener('input', handleNativeInput);
-    if (pInput) pInput.addEventListener('input', handleNativeInput);
-
-    return () => {
-      if (uInput) uInput.removeEventListener('input', handleNativeInput);
-      if (pInput) pInput.removeEventListener('input', handleNativeInput);
-    };
-  }, []);
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const username = usernameRef.current?.value.trim() || '';
-    const password = passwordRef.current?.value || '';
+    
+    const usernameValue = username.trim();
+    const passwordValue = password;
 
-    if (!username || !password) {
+    if (!usernameValue || !passwordValue) {
       setError('Vui lòng nhập đầy đủ tài khoản và mật khẩu');
       return;
     }
@@ -53,7 +36,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
 
     try {
       const url = `${CONFIG.API_BASE_URL}/login.php`;
-      const body = { username, password };
+      const body = {
+        username: usernameValue,
+        password: passwordValue,
+      };
+      
       let result: LoginResponse;
 
       if (Capacitor.isNativePlatform()) {
@@ -86,17 +73,16 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   };
 
   const inputStyle: React.CSSProperties = {
-    transform: 'translate3d(0,0,0)', // Ép tăng tốc phần cứng
+    transform: 'translate3d(0,0,0)',
     WebkitAppearance: 'none',
-    borderRadius: '0px', // Bỏ bo góc để tránh lỗi render
-    backgroundColor: '#111', // Màu đặc
+    backgroundColor: '#111',
     color: 'white',
   };
 
   return (
     <div className="fixed inset-0 z-[2000] bg-[#05070a] flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-sm">
-        <header className="text-center mb-10">
+        <header className="text-center mb-10 shrink-0">
           <Logo size="lg" layout="vertical" />
         </header>
 
@@ -106,8 +92,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
           <form onSubmit={handleLogin} className="flex flex-col gap-6">
             <div className="relative">
               <input
-                ref={usernameRef}
                 type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                autoComplete="username"
+                inputMode="text"
                 placeholder="Tên đăng nhập"
                 className="w-full border-2 border-white/30 py-4 px-6 text-lg focus:outline-none focus:border-cyan-500"
                 style={inputStyle}
@@ -117,8 +106,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
             
             <div className="relative">
               <input
-                ref={passwordRef}
                 type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
                 placeholder="Mật khẩu"
                 className="w-full border-2 border-white/30 py-4 px-6 text-lg focus:outline-none focus:border-cyan-500"
                 style={inputStyle}
