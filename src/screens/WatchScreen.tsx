@@ -485,7 +485,14 @@ const WatchScreen: React.FC<WatchScreenProps> = ({ slug, onBack, onUnauthorized 
         setDetails(movieDetails);
         if (movieDetails.episodes.length > 0) {
           const saved = getHistory().find(item => item.slug === slug);
-          const savedEp = saved ? movieDetails.episodes.find((ep: Episode) => ep.episode === saved.lastEpisode) : null;
+          
+          // Logic so sánh thông minh: Loại bỏ chữ "Tập", "Tap" và khoảng trắng để so sánh
+          const cleanEp = (s: string) => s.toLowerCase().replace(/ tập|tập |tap | tap|tập|tap/g, '').trim();
+          
+          const savedEp = saved ? movieDetails.episodes.find((ep: Episode) => 
+            cleanEp(ep.episode) === cleanEp(saved.lastEpisode)
+          ) : null;
+          
           const nextEp = savedEp || movieDetails.episodes[0];
           setCurrentEp(nextEp);
           setActiveServer(1);
