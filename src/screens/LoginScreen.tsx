@@ -19,18 +19,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Gắn sự kiện Native 'input' như bạn hướng dẫn
   useEffect(() => {
     const handleNativeInput = (e: Event) => {
       const target = e.target as HTMLInputElement;
-      // Việc log này hoặc chỉ đơn giản là có listener sẽ ép WebView phải render chữ
-      console.log('Native Input:', target.value);
-      
-      // Mẹo nhỏ: Ép redraw nhẹ để chữ hiện ra ngay
-      target.style.opacity = '0.99';
-      requestAnimationFrame(() => {
-        target.style.opacity = '1';
-      });
+      // Ép redraw cực mạnh bằng cách thay đổi nhẹ margin
+      target.style.marginTop = target.style.marginTop === '1px' ? '0px' : '1px';
     };
 
     const uInput = usernameRef.current;
@@ -92,25 +85,33 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
     }
   };
 
+  const inputStyle: React.CSSProperties = {
+    transform: 'translate3d(0,0,0)', // Ép tăng tốc phần cứng
+    WebkitAppearance: 'none',
+    borderRadius: '0px', // Bỏ bo góc để tránh lỗi render
+    backgroundColor: '#111', // Màu đặc
+    color: 'white',
+  };
+
   return (
-    <div className="fixed inset-0 z-[2000] bg-[#05070a] flex flex-col items-center justify-center p-6 overflow-hidden">
+    <div className="fixed inset-0 z-[2000] bg-[#05070a] flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-sm">
-        <header className="text-center mb-10 shrink-0">
+        <header className="text-center mb-10">
           <Logo size="lg" layout="vertical" />
         </header>
 
-        <div className="bg-[#1a1a1a] p-8 rounded-3xl border border-white/10 shadow-2xl">
-          <h2 className="text-xl font-bold mb-8 text-white/90 text-center uppercase tracking-widest">Đăng nhập</h2>
+        <div className="bg-[#1a1a1a] p-8 border border-white/20 shadow-2xl">
+          <h2 className="text-xl font-bold mb-8 text-white text-center uppercase tracking-widest">Đăng nhập</h2>
           
-          <form onSubmit={handleLogin} className="flex flex-col gap-5">
+          <form onSubmit={handleLogin} className="flex flex-col gap-6">
             <div className="relative">
               <input
                 ref={usernameRef}
                 type="text"
                 placeholder="Tên đăng nhập"
-                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-base text-white focus:outline-none focus:border-cyan-500/50"
+                className="w-full border-2 border-white/30 py-4 px-6 text-lg focus:outline-none focus:border-cyan-500"
+                style={inputStyle}
                 required
-                defaultValue=""
               />
             </div>
             
@@ -119,9 +120,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                 ref={passwordRef}
                 type="password"
                 placeholder="Mật khẩu"
-                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-base text-white focus:outline-none focus:border-cyan-500/50"
+                className="w-full border-2 border-white/30 py-4 px-6 text-lg focus:outline-none focus:border-cyan-500"
+                style={inputStyle}
                 required
-                defaultValue=""
               />
             </div>
 
@@ -134,9 +135,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
             <button
               type="submit"
               disabled={loading}
-              className="mt-4 bg-white text-black py-4 rounded-2xl font-black text-xs tracking-widest uppercase active:scale-95 disabled:opacity-50"
+              className="mt-4 bg-white text-black py-4 font-black text-xs tracking-widest uppercase active:bg-gray-200"
             >
-              {loading ? 'Đang xác thực...' : 'Vào hệ thống'}
+              {loading ? 'Đang xác thực...' : 'Đăng nhập ngay'}
             </button>
           </form>
         </div>
