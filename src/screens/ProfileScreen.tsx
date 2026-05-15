@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Capacitor } from '@capacitor/core';
-import { getFavorites } from '../storage/favorites';
-import { getHistory } from '../storage/watchHistory';
+import { getFavorites, syncFavoritesFromCloud } from '../storage/favorites';
+import { getHistory, syncHistoryFromCloud } from '../storage/watchHistory';
+import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import { CONFIG } from '../config';
 import { fetchUpdateInfo, getCurrentOtaVersion, hasNewerVersion, installUpdate, reloadForUpdate, syncCurrentOtaVersion } from '../ota';
 
@@ -24,8 +24,9 @@ interface ProfileScreenProps {
 }
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onLogout, onWatch }) => {
-  const [favorites] = useState<SavedMovie[]>(() => getFavorites());
-  const [history] = useState<SavedMovie[]>(() => getHistory());
+  const [favorites, setFavorites] = useState<SavedMovie[]>(() => getFavorites());
+  const [history, setHistory] = useState<SavedMovie[]>(() => getHistory());
+  const [syncing, setSyncing] = useState(false);
   const [activeTab, setActiveTab] = useState('favorites');
   const activeItems = activeTab === 'favorites' ? favorites : history;
 
@@ -54,11 +55,51 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onLogout, onWatch }
     }
   }, [currentVersion]);
 
+  const handleSyncCloud = async () => {
+    setSyncing(true);
+    try {
+      const savedUser = localStorage.getItem('vteen_user');
+      const apiToken = savedUser ? JSON.parse(savedUser)?.api_token : null;
+      if (!apiToken) return;
+
+      const url = `${CONFIG.API_BASE_URL}/sync_api.php?api_token=${encodeURIComponent(apiToken)}&action=pull`;
+      
+      let data: any;
+      if (Capacitor.isNativePlatform()) {
+        const response = await CapacitorHttp.get({ url });
+        data = response.data;
+      } else {
+        const response = await fetch(url);
+        data = await response.json();
+      }
+
+      if (data && data.status === 'success' && data.data) {
+        const cloudHistory = data.data.history || [];
+        const cloudFavs = data.data.favorites || [];
+        
+        syncHistoryFromCloud(cloudHistory);
+        syncFavoritesFromCloud(cloudFavs);
+        
+        setHistory(getHistory());
+        setFavorites(getFavorites());
+        alert('Đồng bộ thành công!');
+      } else {
+        alert('Đồng bộ thất bại: ' + (data?.message || 'Lỗi server'));
+      }
+    } catch (err) {
+      console.error('Sync error:', err);
+      alert('Không thể kết nối máy chủ đồng bộ');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   useEffect(() => {
     void syncCurrentOtaVersion().then(setCurrentVersion);
 
     const timer = window.setTimeout(() => {
       void checkUpdates();
+      void handleSyncCloud();
     }, 0);
     return () => window.clearTimeout(timer);
   }, [checkUpdates]);
@@ -183,12 +224,22 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onLogout, onWatch }
         </div>
       </div>
 
-      <div className="mt-4 px-6">
+      <div className="mt-4 px-6 grid grid-cols-2 gap-3">
+        <button
+          onClick={handleSyncCloud}
+          disabled={syncing}
+          className="rounded-2xl border border-primary/25 bg-primary/8 py-4 text-xs font-black uppercase tracking-[0.1em] text-primary transition-all active:bg-primary/15 disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`}>
+            <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          {syncing ? 'Đang sync...' : 'Đồng bộ Cloud'}
+        </button>
         <button
           onClick={onLogout}
-          className="w-full rounded-2xl border border-red-500/25 bg-red-500/8 py-4 text-xs font-black uppercase tracking-[0.2em] text-red-400 transition-all active:bg-red-500/15"
+          className="rounded-2xl border border-red-500/25 bg-red-500/8 py-4 text-xs font-black uppercase tracking-[0.1em] text-red-400 transition-all active:bg-red-500/15"
         >
-          Dang xuat tai khoan
+          Đăng xuất
         </button>
       </div>
 

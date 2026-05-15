@@ -1,3 +1,6 @@
+import { Capacitor, CapacitorHttp } from '@capacitor/core';
+import { CONFIG } from '../config';
+
 interface FavoriteItem {
   slug: string;
   title: string;
@@ -5,6 +8,41 @@ interface FavoriteItem {
 }
 
 const FAVORITES_KEY = 'vteen_favorites';
+
+const pushFavoriteToCloud = async (slug: string, type: 'add' | 'remove') => {
+  if (import.meta.env.DEV && !Capacitor.isNativePlatform()) return;
+  
+  try {
+    const savedUser = localStorage.getItem('vteen_user');
+    const apiToken = savedUser ? JSON.parse(savedUser)?.api_token : null;
+    if (!apiToken) return;
+
+    const url = `${CONFIG.API_BASE_URL}/sync_api.php`;
+    const params = { api_token: apiToken, action: 'push_favorite', slug, type };
+
+    if (Capacitor.isNativePlatform()) {
+      await CapacitorHttp.post({
+        url,
+        data: params,
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      });
+    } else {
+      const body = new URLSearchParams(params as any).toString();
+      await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body
+      });
+    }
+  } catch (e) {
+    console.warn('[Sync] Favorite push failed', e);
+  }
+};
+
+export const syncFavoritesFromCloud = (items: FavoriteItem[]) => {
+  if (!items || !Array.isArray(items)) return;
+  localStorage.setItem(FAVORITES_KEY, JSON.stringify(items));
+};
 
 export const toggleFavorite = (item: FavoriteItem) => {
   const favorites = getFavorites();
@@ -18,6 +56,10 @@ export const toggleFavorite = (item: FavoriteItem) => {
   }
 
   localStorage.setItem(FAVORITES_KEY, JSON.stringify(updated));
+  
+  // Đẩy lên cloud
+  void pushFavoriteToCloud(item.slug, index < 0 ? 'add' : 'remove');
+  
   return index < 0; // Trả về true nếu đã thêm, false nếu đã xóa
 };
 
