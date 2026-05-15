@@ -39,6 +39,8 @@ const withTimeout = async <T,>(task: Promise<T>, timeoutMs = UPDATE_TIMEOUT_MS):
 };
 
 const normalizeVersion = (version: string) => version.trim().replace(/^v/i, '');
+const OTA_VERSION_KEY = 'vteen_ota_version';
+const OTA_PENDING_VERSION_KEY = 'vteen_ota_pending_version';
 
 const toVersionParts = (version: string) => {
   // Chuẩn hóa: "0.0.9-20" -> ["0", "0", "9", "20"]
@@ -47,7 +49,24 @@ const toVersionParts = (version: string) => {
   return parts.every((part) => Number.isFinite(part)) ? parts : null;
 };
 
-export const getCurrentOtaVersion = () => localStorage.getItem('vteen_ota_version') || CONFIG.VERSION;
+export const getCurrentOtaVersion = () => localStorage.getItem(OTA_VERSION_KEY) || CONFIG.VERSION;
+
+export const syncCurrentOtaVersion = async () => {
+  if (!Capacitor.isNativePlatform()) return getCurrentOtaVersion();
+
+  try {
+    const current = await CapacitorUpdater.current();
+    const bundleVersion = current.bundle.id === 'builtin' ? CONFIG.VERSION : current.bundle.version;
+    const pendingVersion = localStorage.getItem(OTA_PENDING_VERSION_KEY);
+    const nextVersion = bundleVersion || pendingVersion || CONFIG.VERSION;
+
+    localStorage.setItem(OTA_VERSION_KEY, nextVersion);
+    localStorage.removeItem(OTA_PENDING_VERSION_KEY);
+    return nextVersion;
+  } catch {
+    return getCurrentOtaVersion();
+  }
+};
 
 export const hasNewerVersion = (remoteVersion?: string, currentVersion = getCurrentOtaVersion()) => {
   if (!remoteVersion) return false;
@@ -88,8 +107,8 @@ export const installUpdate = async (info: UpdateInfo) => {
   if (info.status !== 'success' || !info.version || !info.url) throw new Error('Invalid update payload');
 
   const bundle = await CapacitorUpdater.download({ url: info.url, version: info.version });
-  await CapacitorUpdater.set({ id: bundle.id });
-  localStorage.setItem('vteen_ota_version', info.version);
+  await CapacitorUpdater.next({ id: bundle.id });
+  localStorage.setItem(OTA_PENDING_VERSION_KEY, info.version);
   return bundle;
 };
 

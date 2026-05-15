@@ -344,20 +344,16 @@ const WatchScreen: React.FC<WatchScreenProps> = ({ slug, onBack, onUnauthorized 
   const lastSavedTimeRef = useRef(0);
 
   useEffect(() => {
-    // Tự động xoay ngang màn hình và ẩn StatusBar khi xem phim
-    const setupOrientation = async () => {
-      try {
-        await OrientationPlugin.lock({ orientation: 'landscape' });
-        await StatusBar.hide();
-      } catch (e) {
-        console.warn('Orientation lock or StatusBar hide failed', e);
-      }
-    };
-    
-    setupOrientation();
+    // Không ép xoay ngang khi vừa vào nữa để tránh gây phiền cho người dùng
+    // Chỉ ẩn StatusBar nếu đang ở Landscape (do xoay điện thoại trước)
+    if (isLandscape) {
+      StatusBar.hide().catch(() => {});
+    } else {
+      StatusBar.show().catch(() => {});
+    }
 
     return () => {
-      // Khóa lại màn hình đứng khi thoát và hiện StatusBar
+      // Đảm bảo khi thoát luôn trả lại portrait và hiện StatusBar
       OrientationPlugin.lock({ orientation: 'portrait' }).catch(() => {});
       StatusBar.show().catch(() => {});
     };
@@ -386,26 +382,33 @@ const WatchScreen: React.FC<WatchScreenProps> = ({ slug, onBack, onUnauthorized 
     const lockLandscape = () => {
       OrientationPlugin.lock({ orientation: 'landscape' })
         .then(() => {
-          setIsLandscape(true);
+          // setIsLandscape(true); // GỠ BỎ: Để listener resize tự cập nhật khi màn hình thực sự xoay xong
           StatusBar.hide().catch(() => {});
         })
         .catch((e) => console.warn('Fullscreen landscape lock failed', e));
     };
     const lockPortrait = () => {
-      OrientationPlugin.lock({ orientation: 'portrait' })
+      // Dùng unlock trước để reset trạng thái rồi mới lock portrait
+      OrientationPlugin.unlock()
+        .then(() => OrientationPlugin.lock({ orientation: 'portrait' }))
         .then(() => {
-          setIsLandscape(false);
+          // setIsLandscape(false); // GỠ BỎ: Để listener resize tự cập nhật
           StatusBar.show().catch(() => {});
         })
-        .catch((e) => console.warn('Fullscreen portrait lock failed', e));
+        .catch((e) => {
+          console.warn('Fullscreen portrait lock failed', e);
+          // Nếu fail thì ít nhất cũng unlock để người dùng tự xoay được
+          OrientationPlugin.unlock().catch(() => {});
+        });
     };
     const handleFullscreenChange = () => {
       const isFull = getFullscreenElement();
       if (isFull) {
         // Delay một chút để trình duyệt ổn định trạng thái fullscreen trước khi xoay
-        setTimeout(lockLandscape, 100);
+        setTimeout(lockLandscape, 150);
       } else {
-        lockPortrait();
+        // Delay một chút để trình duyệt thoát hẳn fullscreen rồi mới xoay đứng lại
+        setTimeout(lockPortrait, 150);
       }
     };
     const video = videoRef.current;
@@ -728,7 +731,7 @@ const WatchScreen: React.FC<WatchScreenProps> = ({ slug, onBack, onUnauthorized 
       {/* Header Bar */}
       <div
         className={`relative z-10 shrink-0 px-4 pb-4 items-center gap-3 border-b border-white/10 bg-background/10 backdrop-blur-xl ${isLandscape ? 'hidden' : 'flex'}`}
-        style={{ paddingTop: 'calc(env(safe-area-inset-top) + 2.5rem)', minHeight: 'calc(env(safe-area-inset-top) + 6rem)' }}
+        style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.5rem)', minHeight: 'calc(env(safe-area-inset-top) + 3.5rem)' }}
       >
         <button 
           onClick={onBack}

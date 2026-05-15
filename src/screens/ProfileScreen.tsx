@@ -1,10 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
-import { Browser } from '@capacitor/browser';
 import { getFavorites } from '../storage/favorites';
 import { getHistory } from '../storage/watchHistory';
 import { CONFIG } from '../config';
-import { fetchUpdateInfo, getCurrentOtaVersion, hasNewerVersion, installUpdate, reloadForUpdate } from '../ota';
+import { fetchUpdateInfo, getCurrentOtaVersion, hasNewerVersion, installUpdate, reloadForUpdate, syncCurrentOtaVersion } from '../ota';
 
 interface User {
   display_name?: string;
@@ -34,6 +33,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onLogout, onWatch }
   const [latestVersion, setLatestVersion] = useState<string>('');
   const [checking, setChecking] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const isNative = Capacitor.isNativePlatform();
 
   const checkUpdates = useCallback(async (manual = false) => {
     setChecking(true);
@@ -55,6 +55,8 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onLogout, onWatch }
   }, [currentVersion]);
 
   useEffect(() => {
+    void syncCurrentOtaVersion().then(setCurrentVersion);
+
     const timer = window.setTimeout(() => {
       void checkUpdates();
     }, 0);
@@ -63,18 +65,24 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onLogout, onWatch }
 
   const handleUpdate = async () => {
     if (!hasNewerVersion(latestVersion, currentVersion)) return;
+    if (!isNative) {
+      alert('Vui lòng mở app APK để cài bản cập nhật.');
+      return;
+    }
     
     setUpdating(true);
     try {
       const data = await fetchUpdateInfo(true);
-      if (data && data.status === 'success' && data.url) {
+      if (data && data.status === 'success' && data.version && data.url && hasNewerVersion(data.version, currentVersion)) {
         await installUpdate(data);
         setCurrentVersion(data.version || CONFIG.VERSION);
         
         alert('Cập nhật thành công! App sẽ khởi động lại.');
-        setTimeout(() => {
+        window.setTimeout(() => {
           reloadForUpdate();
         }, 1500);
+      } else {
+        setLatestVersion(data?.version || currentVersion);
       }
     } catch (err) {
       console.error('Update execution error:', err);
@@ -226,7 +234,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onLogout, onWatch }
           )}
         </div>
 
-        {!checking && !isUpToDate && latestVersion && latestVersion !== 'Loi' && (
+        {!checking && latestVersion && !latestVersion.startsWith('Loi:') && hasNewerVersion(latestVersion, currentVersion) && (
           <div className="mt-3 rounded-2xl border border-yellow-500/20 bg-yellow-500/5 px-5 py-5">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -239,13 +247,18 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onLogout, onWatch }
             </div>
             <button
               onClick={handleUpdate}
-              disabled={updating}
-              className="w-full bg-primary py-3.5 rounded-xl text-[10px] font-black text-black uppercase tracking-[0.2em] shadow-[0_8px_20px_rgba(6,182,212,0.3)] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+              disabled={updating || !isNative}
+              className="w-full bg-primary py-3.5 rounded-xl text-[10px] font-black text-black uppercase tracking-[0.2em] shadow-[0_8px_20px_rgba(6,182,212,0.3)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-55 disabled:shadow-none"
             >
               {updating ? (
                 <>
                   <div className="w-3 h-3 border-2 border-black/20 border-t-black rounded-full animate-spin" />
                   ĐANG CẬP NHẬT...
+                </>
+              ) : !isNative ? (
+                <>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-4 h-4"><path d="M12 2v20M2 12h20" /></svg>
+                  MỞ APP APK ĐỂ CẬP NHẬT
                 </>
               ) : (
                 <>

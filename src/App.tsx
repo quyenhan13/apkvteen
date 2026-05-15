@@ -8,7 +8,7 @@ import HomeScreen from './screens/HomeScreen'
 import UniverseBackground from './components/UniverseBackground'
 import ErrorBoundary from './components/ErrorBoundary'
 import Logo from './components/Logo'
-import { fetchUpdateInfo, getCurrentOtaVersion, hasNewerVersion, installUpdate, reloadForUpdate } from './ota'
+import { fetchUpdateInfo, getCurrentOtaVersion, hasNewerVersion, installUpdate, reloadForUpdate, syncCurrentOtaVersion } from './ota'
 import { CONFIG } from './config'
 import './index.css'
 
@@ -122,7 +122,8 @@ function App() {
 
     if (isNative) {
       try {
-        CapacitorUpdater.notifyAppReady();
+        void CapacitorUpdater.notifyAppReady();
+        void syncCurrentOtaVersion();
       } catch {
         // Native updater may be unavailable in browser-like shells.
       }
@@ -147,14 +148,6 @@ function App() {
     }
 
     const t = setTimeout(() => setShowSplash(false), 450);
-
-    // Đồng bộ phiên bản: Nếu CONFIG.VERSION trong code mới hơn hoặc khác bản lưu, xóa bản lưu cũ
-    const baseVersion = CONFIG.VERSION;
-    const savedOta = localStorage.getItem('vteen_ota_version');
-    if (savedOta && savedOta !== baseVersion) {
-      // Nếu bản trong code là bản chính thức mới (build mới), ưu tiên nó
-      localStorage.removeItem('vteen_ota_version');
-    }
 
     return () => {
       cancelled = true;
