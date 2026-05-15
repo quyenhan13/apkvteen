@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import Logo from '../components/Logo';
 import { CONFIG } from '../config';
@@ -14,18 +14,11 @@ interface LoginResponse {
 }
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
+  // Quản lý bằng State theo đúng chuẩn React
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // Dùng state này để ép redraw mà không làm mất focus
-  const [jitter, setJitter] = useState(false);
-
-  const handleInputChange = (setter: (v: string) => void, val: string) => {
-    setter(val);
-    setJitter(j => !j); // Thay đổi state để ép React re-render cha
-  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,16 +64,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
     }
   };
 
-  const commonInputClass = "w-full bg-[#222] border-2 border-[#444] rounded-xl py-4 px-6 text-base text-white focus:outline-none focus:border-cyan-500";
-  
-  // Style ép Android redraw nhưng GIỮ NGUYÊN con trỏ
-  const inputStyle: React.CSSProperties = {
-    opacity: jitter ? 0.999 : 1, // Nháy cực nhẹ để ép redraw
-    WebkitAppearance: 'none',
-  };
-
   return (
-    <div className="absolute inset-0 z-[2000] bg-[#000] overflow-y-auto">
+    <div className="absolute inset-0 z-[2000] bg-[#05070a] overflow-y-auto">
       <div className="min-h-full flex flex-col items-center justify-center p-6">
         <header className="text-center mb-10 shrink-0">
           <Logo size="lg" layout="vertical" />
@@ -94,14 +79,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
               <input
                 type="text"
                 value={username}
-                onChange={(e) => handleInputChange(setUsername, e.target.value)}
-                autoComplete="off"
+                onChange={(e) => setUsername(e.target.value)} // Dùng onChange thuần túy
+                autoComplete="username"
                 autoCorrect="off"
                 autoCapitalize="none"
                 spellCheck={false}
                 placeholder="Tên đăng nhập"
-                className={commonInputClass}
-                style={inputStyle}
+                className="w-full bg-[#222] border-2 border-[#444] rounded-xl py-4 px-6 text-base text-white focus:outline-none focus:border-cyan-500"
                 required
               />
             </div>
@@ -110,14 +94,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
               <input
                 type="password"
                 value={password}
-                onChange={(e) => handleInputChange(setPassword, e.target.value)}
-                autoComplete="off"
+                onChange={(e) => setPassword(e.target.value)} // Dùng onChange thuần túy
+                autoComplete="current-password"
                 autoCorrect="off"
                 autoCapitalize="none"
                 spellCheck={false}
                 placeholder="Mật khẩu"
-                className={commonInputClass}
-                style={inputStyle}
+                className="w-full bg-[#222] border-2 border-[#444] rounded-xl py-4 px-6 text-base text-white focus:outline-none focus:border-cyan-500"
                 required
               />
             </div>
