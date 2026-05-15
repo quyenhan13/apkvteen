@@ -82,7 +82,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onLogout, onWatch }
         
         setHistory(getHistory());
         setFavorites(getFavorites());
-        alert('Đồng bộ thành công!');
       } else {
         alert('Đồng bộ thất bại: ' + (data?.message || 'Lỗi server'));
       }
