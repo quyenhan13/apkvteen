@@ -37,15 +37,20 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '17'
+          java-version: '21' # Nâng cấp lên Java 21 cho đồng bộ với Capacitor mới nhất
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Accept Android Licenses
+        run: yes | sdkmanager --licenses || true
+
       - name: Build Android APK
         run: |
           npx cap sync android
-          cd android && chmod +x gradlew && ./gradlew assembleDebug --stacktrace --info
+          cd android && chmod +x gradlew && ./gradlew assembleDebug --stacktrace
+        env:
+          JAVA_HOME: ${{ env.JAVA_HOME_21_X64 }}
 
       - name: Get Version
         id: get_version
