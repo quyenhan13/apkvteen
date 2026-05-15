@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import Logo from '../components/Logo';
 import { CONFIG } from '../config';
@@ -18,6 +18,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [redrawKey, setRedrawKey] = useState(0);
+
+  // Mẹo ép Android Redraw: Mỗi khi username hoặc password thay đổi, 
+  // chúng ta thay đổi nhẹ padding để ép trình duyệt phải vẽ lại chữ.
+  useEffect(() => {
+    setRedrawKey(prev => (prev === 0 ? 0.01 : 0));
+  }, [username, password]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,23 +70,17 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
     }
   };
 
-  const inputStyle: React.CSSProperties = {
-    WebkitAppearance: 'none',
-    textShadow: '0 0 0 white', // Mẹo ép Android vẽ lại chữ ngay lập tức
-    backfaceVisibility: 'hidden',
-  };
-
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center p-8 z-[2000] bg-[#05070a]">
+    <div className="fixed inset-0 flex flex-col items-center justify-center p-8 z-[9999] bg-[#05070a]">
       <div className="w-full max-w-sm">
-        <header className="text-center mb-12 flex justify-center">
+        <header className="text-center mb-10 flex justify-center">
           <Logo size="xl" layout="vertical" />
         </header>
 
-        <div className="bg-white/5 p-10 rounded-[2.5rem] border border-white/10 relative">
-          <h2 className="text-xl font-medium mb-8 text-white/90 text-center tracking-tight">Chào mừng trở lại</h2>
+        <div className="bg-[#111] p-8 rounded-2xl border border-white/10 shadow-2xl">
+          <h2 className="text-xl font-bold mb-6 text-white text-center">Đăng nhập</h2>
           
-          <form onSubmit={handleLogin} className="flex flex-col gap-5">
+          <form onSubmit={handleLogin} className="flex flex-col gap-4">
             <div className="relative">
               <input
                 type="text"
@@ -90,9 +91,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                 autoCapitalize="none"
                 spellCheck={false}
                 placeholder="Tên đăng nhập"
-                className="w-full bg-white/10 border border-white/20 rounded-2xl py-4 px-6 text-base text-white placeholder:text-white/30 focus:outline-none focus:border-primary/60"
+                className="w-full bg-white text-black rounded-lg py-3 px-4 text-lg font-sans focus:outline-none"
+                style={{ 
+                   paddingTop: 12 + redrawKey, // Nhích nhẹ để ép redraw
+                   WebkitAppearance: 'none'
+                }}
                 required
-                style={inputStyle}
               />
             </div>
             
@@ -106,14 +110,17 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                 autoCapitalize="none"
                 spellCheck={false}
                 placeholder="Mật khẩu"
-                className="w-full bg-white/10 border border-white/20 rounded-2xl py-4 px-6 text-base text-white placeholder:text-white/30 focus:outline-none focus:border-primary/60"
+                className="w-full bg-white text-black rounded-lg py-3 px-4 text-lg font-sans focus:outline-none"
+                style={{ 
+                   paddingTop: 12 + redrawKey, // Nhích nhẹ để ép redraw
+                   WebkitAppearance: 'none'
+                }}
                 required
-                style={inputStyle}
               />
             </div>
 
             {error && (
-              <p className="text-red-400 text-[11px] text-center font-medium animate-pulse">
+              <p className="text-red-500 text-xs text-center font-bold">
                 {error}
               </p>
             )}
@@ -121,16 +128,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
             <button
               type="submit"
               disabled={loading}
-              className="mt-4 bg-white text-black py-4 rounded-2xl font-black text-xs tracking-widest uppercase active:scale-95 disabled:opacity-50"
+              className="mt-4 bg-cyan-500 text-black py-4 rounded-xl font-black text-xs tracking-widest uppercase active:opacity-80 disabled:opacity-50"
             >
-              {loading ? 'Xác thực...' : 'Vào hệ thống'}
+              {loading ? 'Đang xử lý...' : 'Đăng nhập ngay'}
             </button>
           </form>
         </div>
-
-        <p className="mt-10 text-center text-white/20 text-[9px] uppercase tracking-widest font-medium">
-          Authorized Access Only • VTEEN 108 V1.8
-        </p>
       </div>
     </div>
   );
