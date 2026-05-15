@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import Logo from '../components/Logo';
 import { CONFIG } from '../config';
@@ -18,18 +18,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Dùng state này để ép redraw mà không làm mất focus
+  const [jitter, setJitter] = useState(false);
 
-  // Dùng counter để thay đổi key, ép trình duyệt vẽ lại
-  const [counter, setCounter] = useState(0);
-
-  const handleUsernameChange = (val: string) => {
-    setUsername(val);
-    setCounter(c => c + 1);
-  };
-
-  const handlePasswordChange = (val: string) => {
-    setPassword(val);
-    setCounter(c => c + 1);
+  const handleInputChange = (setter: (v: string) => void, val: string) => {
+    setter(val);
+    setJitter(j => !j); // Thay đổi state để ép React re-render cha
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -76,6 +71,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
     }
   };
 
+  const commonInputClass = "w-full bg-[#222] border-2 border-[#444] rounded-xl py-4 px-6 text-base text-white focus:outline-none focus:border-cyan-500";
+  
+  // Style ép Android redraw nhưng GIỮ NGUYÊN con trỏ
+  const inputStyle: React.CSSProperties = {
+    opacity: jitter ? 0.999 : 1, // Nháy cực nhẹ để ép redraw
+    WebkitAppearance: 'none',
+  };
+
   return (
     <div className="absolute inset-0 z-[2000] bg-[#000] overflow-y-auto">
       <div className="min-h-full flex flex-col items-center justify-center p-6">
@@ -87,34 +90,34 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
           <h2 className="text-lg font-black mb-8 text-white text-center uppercase tracking-[0.2em]">Đăng nhập</h2>
           
           <form onSubmit={handleLogin} className="flex flex-col gap-5">
-            {/* Mỗi lần gõ, key thay đổi sẽ ép Android vẽ lại hoàn toàn */}
-            <div key={`u-${counter}`} className="relative">
+            <div className="relative">
               <input
                 type="text"
                 value={username}
-                onChange={(e) => handleUsernameChange(e.target.value)}
+                onChange={(e) => handleInputChange(setUsername, e.target.value)}
                 autoComplete="off"
                 autoCorrect="off"
                 autoCapitalize="none"
                 spellCheck={false}
                 placeholder="Tên đăng nhập"
-                className="w-full bg-[#222] border-2 border-[#444] rounded-xl py-4 px-6 text-base text-white focus:outline-none focus:border-cyan-500"
+                className={commonInputClass}
+                style={inputStyle}
                 required
-                autoFocus
               />
             </div>
             
-            <div key={`p-${counter}`} className="relative">
+            <div className="relative">
               <input
                 type="password"
                 value={password}
-                onChange={(e) => handlePasswordChange(e.target.value)}
+                onChange={(e) => handleInputChange(setPassword, e.target.value)}
                 autoComplete="off"
                 autoCorrect="off"
                 autoCapitalize="none"
                 spellCheck={false}
                 placeholder="Mật khẩu"
-                className="w-full bg-[#222] border-2 border-[#444] rounded-xl py-4 px-6 text-base text-white focus:outline-none focus:border-cyan-500"
+                className={commonInputClass}
+                style={inputStyle}
                 required
               />
             </div>
