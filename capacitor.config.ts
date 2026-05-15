@@ -37,7 +37,7 @@ const config: CapacitorConfig = {
   android: {
     backgroundColor: '#050510',
     allowMixedContent: true,
-    captureInput: true
+    captureInput: false
   },
   plugins: {
     CapacitorHttp: {
