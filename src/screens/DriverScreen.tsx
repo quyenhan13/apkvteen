@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import { CONFIG } from '../config';
+import { useImeSafeInput } from '../hooks/useImeSafeInput';
 
 interface DriveFile {
   id: string;
@@ -304,6 +305,7 @@ const DriverScreen: React.FC<DriverProps> = ({ user }) => {
 
   const isAdmin = user?.role === 'admin';
   const quotaPercent = quota ? getQuotaPercent(quota) : 0;
+  const driveSearchInput = useImeSafeInput({ value: searchQuery, onValueChange: setSearchQuery });
 
   const handleDelete = async (fileId: string, account: string) => {
     if (!window.confirm('Bạn có chắc muốn xóa tệp này?')) return;
@@ -515,7 +517,8 @@ const DriverScreen: React.FC<DriverProps> = ({ user }) => {
 
   const submitSearch = (event?: React.FormEvent, forceRefresh = false) => {
     event?.preventDefault();
-    const nextQuery = searchQuery.trim();
+    const nextQuery = (driveSearchInput.ref.current?.value ?? searchQuery).trim();
+    setSearchQuery(nextQuery);
     if (nextQuery === submittedQuery) {
       fetchFiles(forceRefresh);
     } else {
@@ -612,8 +615,7 @@ const DriverScreen: React.FC<DriverProps> = ({ user }) => {
               id="drive-search"
               name="drive-search"
               placeholder="Tìm kiếm tệp trong vũ trụ..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              {...driveSearchInput}
               className="w-full bg-[#18181b]/90 border border-white/5 rounded-2xl py-4 pl-12 pr-14 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-primary/50 focus:bg-[#18181b] transition-all"
             />
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors">

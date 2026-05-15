@@ -6,6 +6,7 @@ import Logo from '../components/Logo';
 import MovieCard from '../components/MovieCard';
 import { getHistory } from '../storage/watchHistory';
 import { CONFIG } from '../config';
+import { useImeSafeInput } from '../hooks/useImeSafeInput';
 
 interface Movie {
   display_name: string;
@@ -99,6 +100,7 @@ const HomeScreen: React.FC<HomeProps> = ({ onWatch, isWatching }) => {
   const [headerCompact, setHeaderCompact] = useState(false);
 
   const deferredSearch = useDeferredValue(searchTerm);
+  const searchInput = useImeSafeInput({ value: searchTerm, onValueChange: setSearchTerm });
 
   const fetchMovies = useCallback(async (pageNum: number) => {
     const cache = readMoviesCache(pageNum);
@@ -242,8 +244,7 @@ const HomeScreen: React.FC<HomeProps> = ({ onWatch, isWatching }) => {
             id="movie-search"
             name="movie-search"
             placeholder="Tìm phim trong vũ trụ..." 
-            value={searchTerm} 
-            onChange={(e) => setSearchTerm(e.target.value)} 
+            {...searchInput}
             className={`w-full bg-white/10 border border-white/5 rounded-2xl pl-12 pr-4 text-sm font-bold text-white placeholder:text-white/20 focus:outline-none focus:border-primary/20 focus:bg-white/[0.12] transition-all ${headerCompact ? 'py-3' : 'py-4'}`}
           />
         </div>

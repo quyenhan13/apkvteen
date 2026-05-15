@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import Logo from '../components/Logo';
 import { CONFIG } from '../config';
+import { useImeSafeInput } from '../hooks/useImeSafeInput';
 
 interface LoginScreenProps {
   onLoginSuccess: (userData: unknown) => void;
@@ -19,17 +20,17 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const syncUsername = (e: React.FormEvent<HTMLInputElement>) => {
-    setUsername(e.currentTarget.value);
-  };
-
-  const syncPassword = (e: React.FormEvent<HTMLInputElement>) => {
-    setPassword(e.currentTarget.value);
-  };
+  const usernameInput = useImeSafeInput({ value: username, onValueChange: setUsername });
+  const passwordInput = useImeSafeInput({ value: password, onValueChange: setPassword });
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username.trim() || !password) {
+    const currentUsername = usernameInput.ref.current?.value ?? username;
+    const currentPassword = passwordInput.ref.current?.value ?? password;
+    setUsername(currentUsername);
+    setPassword(currentPassword);
+
+    if (!currentUsername.trim() || !currentPassword) {
       setError('Vui lòng nhập đầy đủ tài khoản và mật khẩu');
       return;
     }
@@ -39,7 +40,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
 
     try {
       const url = `${CONFIG.API_BASE_URL}/login.php`;
-      const body = { username: username.trim(), password };
+      const body = { username: currentUsername.trim(), password: currentPassword };
       let result: LoginResponse;
 
       if (Capacitor.isNativePlatform()) {
@@ -85,10 +86,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
             <div className="bg-white rounded-lg overflow-hidden">
               <input
                 type="text"
-                value={username}
-                onInput={syncUsername}
-                onChange={syncUsername}
-                onCompositionEnd={syncUsername}
+                {...usernameInput}
                 placeholder="Tên đăng nhập"
                 className="w-full bg-white text-black py-4 px-4 text-lg focus:outline-none"
                 required
@@ -98,10 +96,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
             <div className="bg-white rounded-lg overflow-hidden">
               <input
                 type="text"
-                value={password}
-                onInput={syncPassword}
-                onChange={syncPassword}
-                onCompositionEnd={syncPassword}
+                {...passwordInput}
                 placeholder="Mật khẩu"
                 className="w-full bg-white text-black py-4 px-4 text-lg focus:outline-none"
                 style={{ WebkitTextSecurity: 'disc' } as React.CSSProperties}
