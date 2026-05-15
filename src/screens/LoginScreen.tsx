@@ -14,7 +14,6 @@ interface LoginResponse {
 }
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
-  // Quản lý bằng State theo đúng chuẩn React
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -79,11 +78,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
               <input
                 type="text"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)} // Dùng onChange thuần túy
+                onChange={(e) => setUsername(e.target.value)}
                 autoComplete="username"
-                autoCorrect="off"
+                autoCorrect="on" // Bật để hỗ trợ bàn phím tiếng Việt
                 autoCapitalize="none"
-                spellCheck={false}
+                spellCheck={true} // Bật để hỗ trợ bàn phím tiếng Việt
+                inputMode="text"
                 placeholder="Tên đăng nhập"
                 className="w-full bg-[#222] border-2 border-[#444] rounded-xl py-4 px-6 text-base text-white focus:outline-none focus:border-cyan-500"
                 required
@@ -94,11 +94,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
               <input
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)} // Dùng onChange thuần túy
+                onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
-                autoCorrect="off"
+                autoCorrect="on" // Bật để hỗ trợ bàn phím tiếng Việt
                 autoCapitalize="none"
-                spellCheck={false}
+                spellCheck={true} // Bật để hỗ trợ bàn phím tiếng Việt
                 placeholder="Mật khẩu"
                 className="w-full bg-[#222] border-2 border-[#444] rounded-xl py-4 px-6 text-base text-white focus:outline-none focus:border-cyan-500"
                 required
