@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import Logo from '../components/Logo';
@@ -15,17 +15,15 @@ interface LoginResponse {
 }
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
-  const usernameRef = useRef<HTMLInputElement>(null);
-  const passwordRef = useRef<HTMLInputElement>(null);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const username = usernameRef.current?.value.trim() || '';
-    const password = passwordRef.current?.value || '';
-
-    if (!username || !password) {
+    
+    if (!username.trim() || !password) {
       setError('Vui lòng nhập đầy đủ tài khoản và mật khẩu');
       return;
     }
@@ -35,7 +33,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
 
     try {
       const url = `${CONFIG.API_BASE_URL}/login.php`;
-      const body = { username, password };
+      const body = { username: username.trim(), password };
       let result: LoginResponse;
 
       if (Capacitor.isNativePlatform()) {
@@ -72,6 +70,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="fixed inset-0 flex flex-col items-center justify-center p-8 z-[200] bg-[#05070a]/95"
+      style={{ transform: 'translateZ(0)' }}
     >
       <div className="w-full max-w-sm z-10">
         <motion.header 
@@ -89,7 +88,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
           transition={{ delay: 0.3 }}
           className="glass-solid p-10 rounded-[3rem] border border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] relative overflow-hidden"
         >
-          {/* Subtle light streak */}
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
           
           <h2 className="text-xl font-medium mb-8 text-white/90 text-center tracking-tight">Chào mừng trở lại</h2>
@@ -97,33 +95,34 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
           <form onSubmit={handleLogin} className="flex flex-col gap-5">
             <div className="relative">
               <input
-                ref={usernameRef}
                 type="text"
-                name="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 autoComplete="off"
                 autoCorrect="off"
                 autoCapitalize="none"
                 spellCheck={false}
                 inputMode="text"
                 placeholder="Tên đăng nhập"
-                className="w-full bg-white/[0.05] border border-white/10 rounded-2xl py-4 px-6 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-primary/50 focus:bg-white/[0.08] transition-all"
+                className="w-full bg-white/[0.08] border border-white/20 rounded-2xl py-4 px-6 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-primary/60 focus:bg-white/[0.12]"
                 required
-                autoFocus
+                style={{ WebkitAppearance: 'none' }}
               />
             </div>
             
             <div className="relative">
               <input
-                ref={passwordRef}
                 type="password"
-                name="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 autoComplete="off"
                 autoCorrect="off"
                 autoCapitalize="none"
                 spellCheck={false}
                 placeholder="Mật khẩu"
-                className="w-full bg-white/[0.05] border border-white/10 rounded-2xl py-4 px-6 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-primary/50 focus:bg-white/[0.08] transition-all"
+                className="w-full bg-white/[0.08] border border-white/20 rounded-2xl py-4 px-6 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-primary/60 focus:bg-white/[0.12]"
                 required
+                style={{ WebkitAppearance: 'none' }}
               />
             </div>
 
@@ -140,7 +139,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
             <button
               type="submit"
               disabled={loading}
-              className="mt-4 relative group overflow-hidden bg-white text-black py-4 rounded-2xl font-black text-xs tracking-widest uppercase transition-all active:scale-95 disabled:opacity-50"
+              className="mt-4 relative group overflow-hidden bg-white text-black py-4 rounded-2xl font-black text-xs tracking-widest uppercase active:scale-95 disabled:opacity-50"
             >
               <span className="relative z-10">{loading ? 'Xác thực...' : 'Vào hệ thống'}</span>
               <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-10 transition-opacity" />
