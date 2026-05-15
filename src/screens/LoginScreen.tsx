@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import Logo from '../components/Logo';
 import { CONFIG } from '../config';
@@ -18,6 +18,32 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   const passwordRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Gắn sự kiện Native 'input' như bạn hướng dẫn
+  useEffect(() => {
+    const handleNativeInput = (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      // Việc log này hoặc chỉ đơn giản là có listener sẽ ép WebView phải render chữ
+      console.log('Native Input:', target.value);
+      
+      // Mẹo nhỏ: Ép redraw nhẹ để chữ hiện ra ngay
+      target.style.opacity = '0.99';
+      requestAnimationFrame(() => {
+        target.style.opacity = '1';
+      });
+    };
+
+    const uInput = usernameRef.current;
+    const pInput = passwordRef.current;
+
+    if (uInput) uInput.addEventListener('input', handleNativeInput);
+    if (pInput) pInput.addEventListener('input', handleNativeInput);
+
+    return () => {
+      if (uInput) uInput.removeEventListener('input', handleNativeInput);
+      if (pInput) pInput.removeEventListener('input', handleNativeInput);
+    };
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,29 +99,27 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
           <Logo size="lg" layout="vertical" />
         </header>
 
-        <div className="bg-white p-8 rounded-3xl shadow-2xl">
-          <h2 className="text-xl font-bold mb-8 text-black text-center uppercase tracking-widest">Đăng nhập</h2>
+        <div className="bg-[#1a1a1a] p-8 rounded-3xl border border-white/10 shadow-2xl">
+          <h2 className="text-xl font-bold mb-8 text-white/90 text-center uppercase tracking-widest">Đăng nhập</h2>
           
           <form onSubmit={handleLogin} className="flex flex-col gap-5">
             <div className="relative">
-              <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-2">Tên đăng nhập</label>
               <input
                 ref={usernameRef}
-                type="email" // Dùng email để bàn phím xử lý "sạch" hơn
-                placeholder="Nhập tài khoản..."
-                className="w-full bg-gray-100 border-2 border-gray-200 rounded-xl py-4 px-6 text-base text-black focus:outline-none focus:border-cyan-500"
+                type="text"
+                placeholder="Tên đăng nhập"
+                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-base text-white focus:outline-none focus:border-cyan-500/50"
                 required
                 defaultValue=""
               />
             </div>
             
             <div className="relative">
-              <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-2">Mật khẩu</label>
               <input
                 ref={passwordRef}
                 type="password"
-                placeholder="Nhập mật khẩu..."
-                className="w-full bg-gray-100 border-2 border-gray-200 rounded-xl py-4 px-6 text-base text-black focus:outline-none focus:border-cyan-500"
+                placeholder="Mật khẩu"
+                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-base text-white focus:outline-none focus:border-cyan-500/50"
                 required
                 defaultValue=""
               />
@@ -110,9 +134,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
             <button
               type="submit"
               disabled={loading}
-              className="mt-4 bg-black text-white py-4 rounded-xl font-black text-xs tracking-widest uppercase active:scale-95 disabled:opacity-50"
+              className="mt-4 bg-white text-black py-4 rounded-2xl font-black text-xs tracking-widest uppercase active:scale-95 disabled:opacity-50"
             >
-              {loading ? 'Đang xác thực...' : 'Đăng nhập ngay'}
+              {loading ? 'Đang xác thực...' : 'Vào hệ thống'}
             </button>
           </form>
         </div>
