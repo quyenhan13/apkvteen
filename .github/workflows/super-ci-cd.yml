@@ -1,4 +1,4 @@
-name: VTeen Pro Max Build (OTA + APK)
+name: VTeen Pro Max Build (OTA ONLY)
 
 on:
   push:
@@ -23,25 +23,13 @@ jobs:
           node-version: 22
           cache: 'npm'
 
-      - name: Setup Java 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '21'
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android SDK packages
-        run: sdkmanager "platforms;android-36" "build-tools;35.0.0"
-
       - name: Install dependencies
         run: npm install
 
       - name: Build Web
         run: npm run build
 
-      - name: Create APK OTA Bundle
+      - name: Create OTA Bundle (update.zip)
         run: |
           mkdir -p dist
           cd dist
@@ -54,23 +42,13 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Capacitor Sync
-        run: npx cap sync android
-
-      - name: Build Android APK (Debug)
-        run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew clean assembleDebug --no-daemon --no-parallel --stacktrace
-
-      - name: Create GitHub Release
+      - name: Create GitHub Release (OTA ONLY)
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.app_version.outputs.version }}-${{ github.run_number }}
-          name: VTeen ${{ steps.app_version.outputs.version }} build ${{ github.run_number }}
+          name: VTeen OTA ${{ steps.app_version.outputs.version }} build ${{ github.run_number }}
           files: |
             update.zip
-            android/app/build/outputs/apk/debug/app-debug.apk
           generate_release_notes: true
           make_latest: true
           draft: false
