@@ -14,11 +14,19 @@ interface LoginResponse {
 }
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
-  // Dùng Controlled Input như bạn chỉ dẫn
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Hàm đồng bộ chữ ngay lập tức từ mọi nguồn sự kiện
+  const syncUsername = (e: React.FormEvent<HTMLInputElement>) => {
+    setUsername(e.currentTarget.value);
+  };
+
+  const syncPassword = (e: React.FormEvent<HTMLInputElement>) => {
+    setPassword(e.currentTarget.value);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,13 +80,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
     }
   };
 
-  const inputStyle: React.CSSProperties = {
-    transform: 'translate3d(0,0,0)',
-    WebkitAppearance: 'none',
-    backgroundColor: '#111',
-    color: 'white',
-  };
-
   return (
     <div className="fixed inset-0 z-[2000] bg-[#05070a] flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-sm">
@@ -94,25 +95,33 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
               <input
                 type="text"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onInput={syncUsername}
+                onChange={syncUsername}
+                onCompositionEnd={syncUsername}
                 autoComplete="username"
-                inputMode="text"
+                autoCorrect="off"
+                autoCapitalize="none"
+                spellCheck={false}
                 placeholder="Tên đăng nhập"
-                className="w-full border-2 border-white/30 py-4 px-6 text-lg focus:outline-none focus:border-cyan-500"
-                style={inputStyle}
+                className="w-full bg-[#111] border-2 border-white/30 py-4 px-6 text-lg text-white focus:outline-none focus:border-cyan-500"
                 required
               />
             </div>
             
             <div className="relative">
               <input
-                type="password"
+                type="text" // Chuyển sang text để tránh lỗi IME trên một số bàn phím
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onInput={syncPassword}
+                onChange={syncPassword}
+                onCompositionEnd={syncPassword}
                 autoComplete="current-password"
+                autoCorrect="off"
+                autoCapitalize="none"
+                spellCheck={false}
                 placeholder="Mật khẩu"
-                className="w-full border-2 border-white/30 py-4 px-6 text-lg focus:outline-none focus:border-cyan-500"
-                style={inputStyle}
+                className="w-full bg-[#111] border-2 border-white/30 py-4 px-6 text-lg text-white focus:outline-none focus:border-cyan-500"
+                style={{ WebkitTextSecurity: 'disc' } as React.CSSProperties} // Hiển thị dấu chấm thay cho chữ
                 required
               />
             </div>
@@ -128,7 +137,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
               disabled={loading}
               className="mt-4 bg-white text-black py-4 font-black text-xs tracking-widest uppercase active:bg-gray-200"
             >
-              {loading ? 'Đang xác thực...' : 'Đăng nhập ngay'}
+              {loading ? 'Đang xác thực...' : 'Vào hệ thống'}
             </button>
           </form>
         </div>
