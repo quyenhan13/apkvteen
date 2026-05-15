@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import Logo from '../components/Logo';
 import { CONFIG } from '../config';
@@ -22,7 +21,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!username.trim() || !password) {
       setError('Vui lòng nhập đầy đủ tài khoản và mật khẩu');
       return;
@@ -65,31 +63,20 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
     }
   };
 
-  return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="fixed inset-0 flex flex-col items-center justify-center p-8 z-[200] bg-[#05070a]/95"
-      style={{ transform: 'translateZ(0)' }}
-    >
-      <div className="w-full max-w-sm z-10">
-        <motion.header 
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="text-center mb-12 flex justify-center"
-        >
-          <Logo size="xl" layout="vertical" />
-        </motion.header>
+  const inputStyle: React.CSSProperties = {
+    WebkitAppearance: 'none',
+    textShadow: '0 0 0 white', // Mẹo ép Android vẽ lại chữ ngay lập tức
+    backfaceVisibility: 'hidden',
+  };
 
-        <motion.div 
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="glass-solid p-10 rounded-[3rem] border border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] relative overflow-hidden"
-        >
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-          
+  return (
+    <div className="fixed inset-0 flex flex-col items-center justify-center p-8 z-[2000] bg-[#05070a]">
+      <div className="w-full max-w-sm">
+        <header className="text-center mb-12 flex justify-center">
+          <Logo size="xl" layout="vertical" />
+        </header>
+
+        <div className="bg-white/5 p-10 rounded-[2.5rem] border border-white/10 relative">
           <h2 className="text-xl font-medium mb-8 text-white/90 text-center tracking-tight">Chào mừng trở lại</h2>
           
           <form onSubmit={handleLogin} className="flex flex-col gap-5">
@@ -102,11 +89,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                 autoCorrect="off"
                 autoCapitalize="none"
                 spellCheck={false}
-                inputMode="text"
                 placeholder="Tên đăng nhập"
-                className="w-full bg-white/[0.08] border border-white/20 rounded-2xl py-4 px-6 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-primary/60 focus:bg-white/[0.12]"
+                className="w-full bg-white/10 border border-white/20 rounded-2xl py-4 px-6 text-base text-white placeholder:text-white/30 focus:outline-none focus:border-primary/60"
                 required
-                style={{ WebkitAppearance: 'none' }}
+                style={inputStyle}
               />
             </div>
             
@@ -120,43 +106,33 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                 autoCapitalize="none"
                 spellCheck={false}
                 placeholder="Mật khẩu"
-                className="w-full bg-white/[0.08] border border-white/20 rounded-2xl py-4 px-6 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-primary/60 focus:bg-white/[0.12]"
+                className="w-full bg-white/10 border border-white/20 rounded-2xl py-4 px-6 text-base text-white placeholder:text-white/30 focus:outline-none focus:border-primary/60"
                 required
-                style={{ WebkitAppearance: 'none' }}
+                style={inputStyle}
               />
             </div>
 
             {error && (
-              <motion.p 
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-red-400 text-[11px] text-center font-medium"
-              >
+              <p className="text-red-400 text-[11px] text-center font-medium animate-pulse">
                 {error}
-              </motion.p>
+              </p>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className="mt-4 relative group overflow-hidden bg-white text-black py-4 rounded-2xl font-black text-xs tracking-widest uppercase active:scale-95 disabled:opacity-50"
+              className="mt-4 bg-white text-black py-4 rounded-2xl font-black text-xs tracking-widest uppercase active:scale-95 disabled:opacity-50"
             >
-              <span className="relative z-10">{loading ? 'Xác thực...' : 'Vào hệ thống'}</span>
-              <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-10 transition-opacity" />
+              {loading ? 'Xác thực...' : 'Vào hệ thống'}
             </button>
           </form>
-        </motion.div>
+        </div>
 
-        <motion.p 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="mt-10 text-center text-white/20 text-[9px] uppercase tracking-widest font-medium"
-        >
+        <p className="mt-10 text-center text-white/20 text-[9px] uppercase tracking-widest font-medium">
           Authorized Access Only • VTEEN 108 V1.8
-        </motion.p>
+        </p>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
