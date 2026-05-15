@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Cấp quyền để tạo Release và upload file
 
     steps:
       - name: Checkout Source
