@@ -19,7 +19,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Hàm đồng bộ chữ ngay lập tức từ mọi nguồn sự kiện
   const syncUsername = (e: React.FormEvent<HTMLInputElement>) => {
     setUsername(e.currentTarget.value);
   };
@@ -30,11 +29,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const usernameValue = username.trim();
-    const passwordValue = password;
-
-    if (!usernameValue || !passwordValue) {
+    if (!username.trim() || !password) {
       setError('Vui lòng nhập đầy đủ tài khoản và mật khẩu');
       return;
     }
@@ -44,11 +39,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
 
     try {
       const url = `${CONFIG.API_BASE_URL}/login.php`;
-      const body = {
-        username: usernameValue,
-        password: passwordValue,
-      };
-      
+      const body = { username: username.trim(), password };
       let result: LoginResponse;
 
       if (Capacitor.isNativePlatform()) {
@@ -87,41 +78,33 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
           <Logo size="lg" layout="vertical" />
         </header>
 
-        <div className="bg-[#1a1a1a] p-8 border border-white/20 shadow-2xl">
-          <h2 className="text-xl font-bold mb-8 text-white text-center uppercase tracking-widest">Đăng nhập</h2>
+        <div className="bg-[#1a1a1a] p-8 rounded-2xl border border-white/10 shadow-2xl">
+          <h2 className="text-xl font-bold mb-6 text-white text-center">Đăng nhập</h2>
           
-          <form onSubmit={handleLogin} className="flex flex-col gap-6">
-            <div className="relative">
+          <form onSubmit={handleLogin} className="flex flex-col gap-5">
+            <div className="bg-white rounded-lg overflow-hidden">
               <input
                 type="text"
                 value={username}
                 onInput={syncUsername}
                 onChange={syncUsername}
                 onCompositionEnd={syncUsername}
-                autoComplete="username"
-                autoCorrect="off"
-                autoCapitalize="none"
-                spellCheck={false}
                 placeholder="Tên đăng nhập"
-                className="w-full bg-[#111] border-2 border-white/30 py-4 px-6 text-lg text-white focus:outline-none focus:border-cyan-500"
+                className="w-full bg-white text-black py-4 px-4 text-lg focus:outline-none"
                 required
               />
             </div>
             
-            <div className="relative">
+            <div className="bg-white rounded-lg overflow-hidden">
               <input
-                type="text" // Chuyển sang text để tránh lỗi IME trên một số bàn phím
+                type="text"
                 value={password}
                 onInput={syncPassword}
                 onChange={syncPassword}
                 onCompositionEnd={syncPassword}
-                autoComplete="current-password"
-                autoCorrect="off"
-                autoCapitalize="none"
-                spellCheck={false}
                 placeholder="Mật khẩu"
-                className="w-full bg-[#111] border-2 border-white/30 py-4 px-6 text-lg text-white focus:outline-none focus:border-cyan-500"
-                style={{ WebkitTextSecurity: 'disc' } as React.CSSProperties} // Hiển thị dấu chấm thay cho chữ
+                className="w-full bg-white text-black py-4 px-4 text-lg focus:outline-none"
+                style={{ WebkitTextSecurity: 'disc' } as React.CSSProperties}
                 required
               />
             </div>
@@ -135,11 +118,15 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
             <button
               type="submit"
               disabled={loading}
-              className="mt-4 bg-white text-black py-4 font-black text-xs tracking-widest uppercase active:bg-gray-200"
+              className="mt-2 bg-cyan-500 text-black py-4 rounded-xl font-black text-xs tracking-widest uppercase active:opacity-80 disabled:opacity-50"
             >
-              {loading ? 'Đang xác thực...' : 'Vào hệ thống'}
+              {loading ? 'Đang xác thực...' : 'Đăng nhập ngay'}
             </button>
           </form>
+
+          <p className="mt-6 text-[10px] text-white/30 text-center leading-relaxed">
+            * Nếu không thấy chữ hiện ra, vui lòng chuyển sang <span className="text-cyan-500 font-bold">bàn phím Gboard</span> để có trải nghiệm tốt nhất.
+          </p>
         </div>
       </div>
     </div>
