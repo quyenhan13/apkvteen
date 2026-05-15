@@ -157,7 +157,9 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (user.api_token) return;
+    // Nếu người dùng đã có token HOẶC vừa mới chủ động đăng xuất (authError === 'manual')
+    // thì không tự động đăng nhập nữa.
+    if (user.api_token || authError === 'manual') return;
 
     let cancelled = false;
 
