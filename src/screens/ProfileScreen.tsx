@@ -223,9 +223,12 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onLogout, onWatch }
         </div>
       </div>
 
-      <div className="mt-4 px-6 grid grid-cols-2 gap-3">
+      <div className="mt-4 px-6 grid grid-cols-2 gap-3 relative z-50">
         <button
-          onClick={handleSyncCloud}
+          onClick={() => {
+            console.log('Sync button clicked');
+            handleSyncCloud();
+          }}
           disabled={syncing}
           className="rounded-2xl border border-primary/25 bg-primary/8 py-4 text-xs font-black uppercase tracking-[0.1em] text-primary transition-all active:bg-primary/15 disabled:opacity-50 flex items-center justify-center gap-2"
         >
@@ -235,8 +238,11 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onLogout, onWatch }
           {syncing ? 'Đang sync...' : 'Đồng bộ Cloud'}
         </button>
         <button
-          onClick={onLogout}
-          className="rounded-2xl border border-red-500/25 bg-red-500/8 py-4 text-xs font-black uppercase tracking-[0.1em] text-red-400 transition-all active:bg-red-500/15"
+          onClick={() => {
+            console.log('Logout button clicked');
+            onLogout();
+          }}
+          className="rounded-2xl border border-red-500/25 bg-red-500/8 py-4 text-xs font-black uppercase tracking-[0.1em] text-red-400 transition-all active:bg-red-500/15 active:scale-95"
         >
           Đăng xuất
         </button>

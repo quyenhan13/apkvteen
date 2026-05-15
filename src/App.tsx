@@ -219,13 +219,17 @@ function App() {
   };
 
   const handleLogout = () => {
-    setUser(DEFAULT_USER);
+    if (!window.confirm('Bạn có chắc chắn muốn đăng xuất không?')) return;
+    
+    // Xóa sạch trạng thái
     localStorage.removeItem('vteen_user');
     localStorage.removeItem(WATCHING_SLUG_KEY);
+    
+    setUser(DEFAULT_USER);
+    setAuthError('manual');
     setActiveTab('home');
     setWatchingSlug(null);
-    setAuthError('manual'); // Trigger login screen
-    setAuthRetry((value) => value + 1);
+    setAuthRetry((v) => v + 1);
   };
 
   const handleLoginSuccess = (userData: unknown) => {
